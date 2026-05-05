@@ -1,0 +1,508 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		10C5D2F746F84B645C6B9DF0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52DEE15D360D611BCD50BD9A /* ContentView.swift */; };
+		24779A8F5B51F900063CDA50 /* BLEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E47D5B1E5DFCA64CE8A18F39 /* BLEManager.swift */; };
+		2D83179E2143DE8F1E124D33 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7824338E4581121E83E51F7B /* DashboardView.swift */; };
+		31764DF271176853A9FCC024 /* TelemetryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16788C55DE853B7757C8F55A /* TelemetryViewModel.swift */; };
+		3BE342FF2A4A9D8ED2E31174 /* VESCProtocolParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D6B281BE38F8FB96688757 /* VESCProtocolParser.swift */; };
+		4E796C12AC23D385C88E2D74 /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1662D4E18C8B369A94633196 /* MetricCard.swift */; };
+		51258DB267BA740B72991CC0 /* BLEDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE89CC0CB0C010CA590C7D4A /* BLEDevice.swift */; };
+		72B372C99B6733750517F0FF /* CANNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB34049FAA0C6AE0D43852B /* CANNode.swift */; };
+		745074AFA04B126B2833DF1E /* VESCDashboardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0C9F4C6DC173512DE83460 /* VESCDashboardApp.swift */; };
+		7514212435CE9A68EF40BC5B /* LogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791D0E055BDFECEED14CEB51 /* LogView.swift */; };
+		8654F6946557E7FEE0503537 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A7D9CF59FE19448E53122E /* SettingsView.swift */; };
+		8AF0792685B5D23997D8C3B3 /* MockVESCSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1E648F3EC74A4A8519AF85 /* MockVESCSimulator.swift */; };
+		8EF359F8B2FD023A9E25D2D2 /* MotorConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81495CD2D6C9CACA3D9BEE9B /* MotorConfigView.swift */; };
+		A82B11483A61FB04B020FF6E /* DeviceScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A7097D51626E63D330B6B02 /* DeviceScanView.swift */; };
+		CC7CED3E6B7052E1BEABFD3E /* VESCProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE94DA994F5C1AE16A0736AE /* VESCProtocolTests.swift */; };
+		D6D29ECBC1C4D5156B9C9430 /* TelemetryData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F93404B5BE442CCB2B3190 /* TelemetryData.swift */; };
+		EFDCFA0987598A6216E56D03 /* MotorLimitsConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74C80345013F0FFCAD3EA34 /* MotorLimitsConfig.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F69D2B2222146A464F227959 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D58E5BC3FC6E1AB009301588 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CA2AD69E58CEC061471DFC5B;
+			remoteInfo = VESCDashboard;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		1662D4E18C8B369A94633196 /* MetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCard.swift; sourceTree = "<group>"; };
+		16788C55DE853B7757C8F55A /* TelemetryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryViewModel.swift; sourceTree = "<group>"; };
+		52DEE15D360D611BCD50BD9A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		5D7858CF65BA996310B0F7EC /* VESCDashboardTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VESCDashboardTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		62D6B281BE38F8FB96688757 /* VESCProtocolParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VESCProtocolParser.swift; sourceTree = "<group>"; };
+		7824338E4581121E83E51F7B /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		791D0E055BDFECEED14CEB51 /* LogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogView.swift; sourceTree = "<group>"; };
+		7A7097D51626E63D330B6B02 /* DeviceScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceScanView.swift; sourceTree = "<group>"; };
+		7B1E648F3EC74A4A8519AF85 /* MockVESCSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockVESCSimulator.swift; sourceTree = "<group>"; };
+		81495CD2D6C9CACA3D9BEE9B /* MotorConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorConfigView.swift; sourceTree = "<group>"; };
+		9D791A7695E4CE6D73FA5DFE /* VESCDashboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VESCDashboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B6F93404B5BE442CCB2B3190 /* TelemetryData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryData.swift; sourceTree = "<group>"; };
+		BE0C9F4C6DC173512DE83460 /* VESCDashboardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VESCDashboardApp.swift; sourceTree = "<group>"; };
+		DE94DA994F5C1AE16A0736AE /* VESCProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VESCProtocolTests.swift; sourceTree = "<group>"; };
+		DEB34049FAA0C6AE0D43852B /* CANNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CANNode.swift; sourceTree = "<group>"; };
+		E47D5B1E5DFCA64CE8A18F39 /* BLEManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEManager.swift; sourceTree = "<group>"; };
+		E6A7D9CF59FE19448E53122E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		E74C80345013F0FFCAD3EA34 /* MotorLimitsConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorLimitsConfig.swift; sourceTree = "<group>"; };
+		EE89CC0CB0C010CA590C7D4A /* BLEDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEDevice.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0DC10E3870F3655746B9F3A8 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				EE89CC0CB0C010CA590C7D4A /* BLEDevice.swift */,
+				DEB34049FAA0C6AE0D43852B /* CANNode.swift */,
+				E74C80345013F0FFCAD3EA34 /* MotorLimitsConfig.swift */,
+				B6F93404B5BE442CCB2B3190 /* TelemetryData.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		1221186799F9F53772DC3E18 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				1662D4E18C8B369A94633196 /* MetricCard.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		135CD63EDD49B9D83F30C688 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				16788C55DE853B7757C8F55A /* TelemetryViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		5EC8595EB025659CD48A5AD0 = {
+			isa = PBXGroup;
+			children = (
+				66FC31676EABD3220D743A29 /* VESCDashboard */,
+				D190A3C3FDEB8527CB3999DA /* VESCDashboardTests */,
+				81DBB643B81198E12F4F1D59 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		66FC31676EABD3220D743A29 /* VESCDashboard */ = {
+			isa = PBXGroup;
+			children = (
+				A594BC7CE787B149C23CB973 /* BLE */,
+				0DC10E3870F3655746B9F3A8 /* Models */,
+				686488F3EB72EA472774C659 /* Protocol */,
+				135CD63EDD49B9D83F30C688 /* ViewModels */,
+				80CC6A313C367034043CEAC8 /* Views */,
+				BE0C9F4C6DC173512DE83460 /* VESCDashboardApp.swift */,
+			);
+			path = VESCDashboard;
+			sourceTree = "<group>";
+		};
+		686488F3EB72EA472774C659 /* Protocol */ = {
+			isa = PBXGroup;
+			children = (
+				62D6B281BE38F8FB96688757 /* VESCProtocolParser.swift */,
+			);
+			path = Protocol;
+			sourceTree = "<group>";
+		};
+		80CC6A313C367034043CEAC8 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				1221186799F9F53772DC3E18 /* Components */,
+				52DEE15D360D611BCD50BD9A /* ContentView.swift */,
+				7824338E4581121E83E51F7B /* DashboardView.swift */,
+				7A7097D51626E63D330B6B02 /* DeviceScanView.swift */,
+				791D0E055BDFECEED14CEB51 /* LogView.swift */,
+				81495CD2D6C9CACA3D9BEE9B /* MotorConfigView.swift */,
+				E6A7D9CF59FE19448E53122E /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		81DBB643B81198E12F4F1D59 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9D791A7695E4CE6D73FA5DFE /* VESCDashboard.app */,
+				5D7858CF65BA996310B0F7EC /* VESCDashboardTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A594BC7CE787B149C23CB973 /* BLE */ = {
+			isa = PBXGroup;
+			children = (
+				E47D5B1E5DFCA64CE8A18F39 /* BLEManager.swift */,
+				7B1E648F3EC74A4A8519AF85 /* MockVESCSimulator.swift */,
+			);
+			path = BLE;
+			sourceTree = "<group>";
+		};
+		D190A3C3FDEB8527CB3999DA /* VESCDashboardTests */ = {
+			isa = PBXGroup;
+			children = (
+				DE94DA994F5C1AE16A0736AE /* VESCProtocolTests.swift */,
+			);
+			path = VESCDashboardTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A5225575820D42D35D1316DA /* VESCDashboardTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3F7C6C0E11AC6307142361EA /* Build configuration list for PBXNativeTarget "VESCDashboardTests" */;
+			buildPhases = (
+				7287ECBAF1015C10C2A8AD86 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				22F6A9345EC6209C10862E3D /* PBXTargetDependency */,
+			);
+			name = VESCDashboardTests;
+			packageProductDependencies = (
+			);
+			productName = VESCDashboardTests;
+			productReference = 5D7858CF65BA996310B0F7EC /* VESCDashboardTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		CA2AD69E58CEC061471DFC5B /* VESCDashboard */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AEAB8F5E40F9CD69BBA3C1E9 /* Build configuration list for PBXNativeTarget "VESCDashboard" */;
+			buildPhases = (
+				2E2E5730741CA6D38641024F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VESCDashboard;
+			packageProductDependencies = (
+			);
+			productName = VESCDashboard;
+			productReference = 9D791A7695E4CE6D73FA5DFE /* VESCDashboard.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D58E5BC3FC6E1AB009301588 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					CA2AD69E58CEC061471DFC5B = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 4DA4417C5EE63730AEE8A029 /* Build configuration list for PBXProject "VESCDashboard" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 5EC8595EB025659CD48A5AD0;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 81DBB643B81198E12F4F1D59 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CA2AD69E58CEC061471DFC5B /* VESCDashboard */,
+				A5225575820D42D35D1316DA /* VESCDashboardTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2E2E5730741CA6D38641024F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				51258DB267BA740B72991CC0 /* BLEDevice.swift in Sources */,
+				24779A8F5B51F900063CDA50 /* BLEManager.swift in Sources */,
+				72B372C99B6733750517F0FF /* CANNode.swift in Sources */,
+				10C5D2F746F84B645C6B9DF0 /* ContentView.swift in Sources */,
+				2D83179E2143DE8F1E124D33 /* DashboardView.swift in Sources */,
+				A82B11483A61FB04B020FF6E /* DeviceScanView.swift in Sources */,
+				7514212435CE9A68EF40BC5B /* LogView.swift in Sources */,
+				4E796C12AC23D385C88E2D74 /* MetricCard.swift in Sources */,
+				8AF0792685B5D23997D8C3B3 /* MockVESCSimulator.swift in Sources */,
+				8EF359F8B2FD023A9E25D2D2 /* MotorConfigView.swift in Sources */,
+				EFDCFA0987598A6216E56D03 /* MotorLimitsConfig.swift in Sources */,
+				8654F6946557E7FEE0503537 /* SettingsView.swift in Sources */,
+				D6D29ECBC1C4D5156B9C9430 /* TelemetryData.swift in Sources */,
+				31764DF271176853A9FCC024 /* TelemetryViewModel.swift in Sources */,
+				745074AFA04B126B2833DF1E /* VESCDashboardApp.swift in Sources */,
+				3BE342FF2A4A9D8ED2E31174 /* VESCProtocolParser.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7287ECBAF1015C10C2A8AD86 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CC7CED3E6B7052E1BEABFD3E /* VESCProtocolTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		22F6A9345EC6209C10862E3D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CA2AD69E58CEC061471DFC5B /* VESCDashboard */;
+			targetProxy = F69D2B2222146A464F227959 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0B60965A1B6E3C322A797EB6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = L4JRJYD82L;
+				INFOPLIST_FILE = VESCDashboard/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.vescdash.VESCDashboard;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		0BC47D14A461AFA66BF7BCA3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		10FA9E76957FD25362D8B7AA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.vescdash.VESCDashboardTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VESCDashboard.app/VESCDashboard";
+			};
+			name = Debug;
+		};
+		75C3AE3893D0289EDBCEBE11 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = L4JRJYD82L;
+				INFOPLIST_FILE = VESCDashboard/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.vescdash.VESCDashboard;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		952CD577EE05DE64F6CE0A94 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.vescdash.VESCDashboardTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VESCDashboard.app/VESCDashboard";
+			};
+			name = Release;
+		};
+		A5FE770EA98E40C9FF8870C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3F7C6C0E11AC6307142361EA /* Build configuration list for PBXNativeTarget "VESCDashboardTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				10FA9E76957FD25362D8B7AA /* Debug */,
+				952CD577EE05DE64F6CE0A94 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4DA4417C5EE63730AEE8A029 /* Build configuration list for PBXProject "VESCDashboard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A5FE770EA98E40C9FF8870C3 /* Debug */,
+				0BC47D14A461AFA66BF7BCA3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AEAB8F5E40F9CD69BBA3C1E9 /* Build configuration list for PBXNativeTarget "VESCDashboard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75C3AE3893D0289EDBCEBE11 /* Debug */,
+				0B60965A1B6E3C322A797EB6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D58E5BC3FC6E1AB009301588 /* Project object */;
+}
