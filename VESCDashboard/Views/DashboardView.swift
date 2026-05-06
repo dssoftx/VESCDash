@@ -4,8 +4,10 @@ struct DashboardView: View {
     @ObservedObject var vm: TelemetryViewModel
     @State private var showSettings = false
     @State private var showMotorConfig = false
+    @State private var showMotorProfile = false
     @State private var showLog = false
     @State private var showScan = false
+    @State private var showMotorWizard = false
 
     private var t: TelemetryData { vm.telemetry }
 
@@ -34,16 +36,24 @@ struct DashboardView: View {
                     connectionButton
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 16) {
+                    Menu {
                         Button { showLog = true } label: {
-                            Image(systemName: "list.bullet.rectangle")
+                            Label("Log", systemImage: "list.bullet.rectangle")
+                        }
+                        Button { showMotorWizard = true } label: {
+                            Label("Motor Wizard", systemImage: "wand.and.stars")
+                        }
+                        Button { showMotorProfile = true } label: {
+                            Label("Profile", systemImage: "slider.horizontal.3")
                         }
                         Button { showMotorConfig = true } label: {
-                            Image(systemName: "bolt.circle")
+                            Label("Motor Config", systemImage: "bolt.circle")
                         }
                         Button { showSettings = true } label: {
-                            Image(systemName: "gearshape")
+                            Label("Settings", systemImage: "gearshape")
                         }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
             }
@@ -58,6 +68,12 @@ struct DashboardView: View {
             }
             .sheet(isPresented: $showLog) {
                 LogView(logs: vm.logs)
+            }
+            .sheet(isPresented: $showMotorWizard) {
+                MotorWizardView(vm: vm)
+            }
+            .sheet(isPresented: $showMotorProfile) {
+                MotorProfileView(vm: vm)
             }
         }
         .preferredColorScheme(.dark)

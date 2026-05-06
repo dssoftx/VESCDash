@@ -4,6 +4,17 @@ import SwiftUI
 
 // MARK: - Supporting enums
 
+// MARK: - Motor Detection
+
+enum WizardDetectionState: Equatable {
+    case idle
+    case measuringRL
+    case rlResult(r: Float, l: Float, ldLqDiff: Float)   // Ω, µH, µH
+    case measuringLinkage(r: Float, l: Float, ldLqDiff: Float)
+    case complete(r: Float, l: Float, ldLqDiff: Float, lambda: Float) // λ in Wb
+    case failed(String)
+}
+
 enum MotorLimitsSendState: Equatable {
     case idle
     case sent(String)
@@ -55,10 +66,14 @@ final class TelemetryViewModel: ObservableObject {
     // MARK: Settings
     @Published var settings = DrivetrainSettings()
     @Published var motorLimits = MotorLimitsConfig()
+    @Published var motorProfile = MotorProfile()
 
     // MARK: Motor config send/read states
     @Published var motorLimitsSendState: MotorLimitsSendState = .idle
     @Published var motorLimitsReadState: MotorLimitsReadState = .idle
+
+    // MARK: Motor detection (wizard)
+    @Published var detectionState: WizardDetectionState = .idle
 
     // MARK: CAN bus
     @Published var canNodes: [CANNode] = []
@@ -67,9 +82,24 @@ final class TelemetryViewModel: ObservableObject {
     @Published var persistedCANIDs: [Int] = []
     @Published var localFWVersion: String? = nil   // firmware version of the directly-connected VESC
     private var pingCANNodesCountBefore = 0
-    private var pendingFWVersionCANID: Int? = nil    // the node currently being queried
-    private var fwVersionQueue: [Int] = []           // nodes waiting for a FW_VERSION request
+    private var pendingFWVersionCANID: Int? = nil
+    private var fwVersionQueue: [Int] = []
     private var pendingLocalFWVersion = false
+
+    // MARK: Motor config cache (raw MCCONF payloads for read-modify-write)
+    private enum MCConfSource { case local; case can(Int) }
+    private var pendingMCConfSource: MCConfSource = .local
+    private var rawMCConfLocal: [UInt8]? = nil
+    private var rawMCConfByCANID: [Int: [UInt8]] = [:]
+
+    // Background MCCONF auto-fetch queue (nil = local VESC, Int = CAN ID)
+    private var bgMCConfQueue: [Int?] = []
+    private var isBgFetchingMCConf = false
+
+    var hasMCConfCache: Bool {
+        if let id = selectedCANID { return rawMCConfByCANID[id] != nil }
+        return rawMCConfLocal != nil
+    }
 
     // MARK: Connection
     @Published var logs: [String] = []
@@ -140,6 +170,7 @@ final class TelemetryViewModel: ObservableObject {
         }
         mergeNodeID(id)
         requestFWVersion(canID: id)
+        if isConnected { enqueueBgMCConfFetch(id) }
     }
 
     /// Removes a CAN node from both the live list and persistent storage.
@@ -187,13 +218,53 @@ final class TelemetryViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Background MCCONF Auto-Fetch
+
+    /// Enqueues a silent MCCONF fetch for `canID` (nil = local). Deduplicates and starts the
+    /// queue drain immediately if nothing is already in flight.
+    func enqueueBgMCConfFetch(_ canID: Int?) {
+        guard !bgMCConfQueue.contains(where: { $0 == canID }) else { return }
+        bgMCConfQueue.append(canID)
+        if !isBgFetchingMCConf { drainBgMCConfQueue() }
+    }
+
+    private func drainBgMCConfQueue() {
+        guard !bgMCConfQueue.isEmpty, isConnected,
+              motorLimitsReadState != .reading else {
+            isBgFetchingMCConf = false
+            return
+        }
+        let source = bgMCConfQueue.removeFirst()
+        isBgFetchingMCConf = true
+        pendingMCConfSource = source.map { .can($0) } ?? .local
+        let label = source.map { "CAN #\($0)" } ?? "local"
+
+        if let id = source {
+            bleManager.send(VESCProtocolParser.buildForwardCAN(
+                toID: UInt8(id), commandPayload: [VESCCommand.getMCConf.rawValue]))
+        } else {
+            bleManager.send(VESCProtocolParser.buildPacket(payload: [VESCCommand.getMCConf.rawValue]))
+        }
+        appendLog("[AUTO] Fetching MCCONF from \(label)…")
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard self.isBgFetchingMCConf else { return }
+            self.appendLog("[AUTO] MCCONF timeout for \(label)")
+            self.isBgFetchingMCConf = false
+            self.drainBgMCConfQueue()
+        }
+    }
+
     /// Reads the current motor config from the active VESC and updates `motorLimits`.
     func fetchMotorConfig() {
         guard isConnected else {
             motorLimitsReadState = .failed("Not connected")
             return
         }
+        isBgFetchingMCConf = false   // user-initiated fetch takes priority
         motorLimitsReadState = .reading
+        pendingMCConfSource = selectedCANID.map { .can($0) } ?? .local
         sendCommand([VESCCommand.getMCConf.rawValue])
         appendLog("[MCCONF] Requesting motor config…")
 
@@ -211,6 +282,7 @@ final class TelemetryViewModel: ObservableObject {
     func fetchMotorConfigFrom(canID: Int) {
         guard isConnected else { motorLimitsReadState = .failed("Not connected"); return }
         motorLimitsReadState = .reading
+        pendingMCConfSource = .can(canID)
         bleManager.send(VESCProtocolParser.buildForwardCAN(toID: UInt8(canID),
                                                            commandPayload: [VESCCommand.getMCConf.rawValue]))
         appendLog("[MCCONF] Requesting motor config from CAN #\(canID)…")
@@ -223,22 +295,197 @@ final class TelemetryViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Motor Detection (Wizard)
+
+    /// Sends COMM_DETECT_MOTOR_R_L. Motor makes noise but does not rotate.
+    func measureRL() {
+        guard isConnected else { detectionState = .failed("Not connected"); return }
+        detectionState = .measuringRL
+        sendCommand([VESCCommand.measureRL.rawValue])
+        appendLog("[DETECT] Measuring R & L…")
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 10_000_000_000)
+            if case .measuringRL = self.detectionState {
+                self.detectionState = .failed("R/L measurement timed out")
+                self.appendLog("[DETECT] R/L timeout")
+            }
+        }
+    }
+
+    /// Sends COMM_DETECT_MOTOR_FLUX_LINKAGE_OPENLOOP. Motor will spin — user must be warned first.
+    /// - Parameters:
+    ///   - current:    Detection current (A); l_current_max/3 is a safe default.
+    ///   - erpmPerSec: Open-loop ramp rate in ERPM/s (default 700).
+    ///   - lowDuty:    Starting duty cycle (default 0.06).
+    func measureFluxLinkageOpenloop(current: Float, erpmPerSec: Float = 700, lowDuty: Float = 0.06) {
+        guard isConnected else { detectionState = .failed("Not connected"); return }
+        guard case .rlResult(let r, let l, let ldLq) = detectionState else {
+            detectionState = .failed("Run R/L measurement first")
+            return
+        }
+        detectionState = .measuringLinkage(r: r, l: l, ldLqDiff: ldLq)
+        let inductance_H = l / 1_000_000.0
+        var payload: [UInt8] = [VESCCommand.measureFluxLinkageOpenloop.rawValue]
+        func app32(_ v: Int32) {
+            let u = UInt32(bitPattern: v)
+            payload += [UInt8((u>>24)&0xFF), UInt8((u>>16)&0xFF), UInt8((u>>8)&0xFF), UInt8(u&0xFF)]
+        }
+        app32(Int32(current    * 1_000))
+        app32(Int32(erpmPerSec * 1_000))
+        app32(Int32(lowDuty    * 1_000))
+        app32(Int32(r          * 1_000_000))
+        app32(Int32(inductance_H * 100_000_000))
+        sendCommand(payload)
+        appendLog("[DETECT] Measuring flux linkage (open-loop)… motor will spin")
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 25_000_000_000)
+            if case .measuringLinkage = self.detectionState {
+                self.detectionState = .failed("Flux linkage measurement timed out")
+                self.appendLog("[DETECT] Flux linkage timeout")
+            }
+        }
+    }
+
+    /// Patches the MCCONF cache with FOC detection results and drivetrain params, then
+    /// sends COMM_SET_MCCONF (always saves to flash). Also updates local drivetrain settings.
+    func applyFOCDetection(
+        r_Ω: Float, l_µH: Float, ldLqDiff_µH: Float, lambda_Wb: Float, tc_µs: Float = 1000,
+        siMotorPoles: Int, siGearRatio: Float, siWheelDiameterMM: Float
+    ) {
+        guard isConnected else { motorLimitsSendState = .failed("Not connected"); return }
+        let cache: [UInt8]? = selectedCANID.map { rawMCConfByCANID[$0] } ?? rawMCConfLocal
+        guard let cache else { motorLimitsSendState = .failed("Read MCCONF first"); return }
+
+        guard let writePayload = VESCProtocolParser.mcconfPayloadWithFOCDetection(
+            fromReceivedPayload: cache,
+            r_Ω: r_Ω, l_µH: l_µH, ldLqDiff_µH: ldLqDiff_µH, lambda_Wb: lambda_Wb, tc_µs: tc_µs,
+            siMotorPoles: siMotorPoles,
+            siGearRatio: siGearRatio,
+            siWheelDiameterM: siWheelDiameterMM / 1000.0
+        ) else { motorLimitsSendState = .failed("Payload build failed"); return }
+
+        sendCommand(writePayload)
+
+        // Update the MCCONF cache so future current-limit writes don't overwrite detection results
+        var updatedCache = writePayload
+        updatedCache[0] = VESCCommand.getMCConf.rawValue
+        if let id = selectedCANID { rawMCConfByCANID[id] = updatedCache }
+        else { rawMCConfLocal = updatedCache }
+
+        settings.motorPolePairs = Double(siMotorPoles) / 2.0
+        settings.gearRatio      = Double(siGearRatio)
+        settings.wheelDiameterMM = Double(siWheelDiameterMM)
+        saveSettings()
+
+        motorLimitsSendState = .sent("Motor parameters applied & saved to flash")
+        appendLog("[DETECT] FOC detection applied: R=\(String(format:"%.2f",r_Ω*1000))mΩ L=\(String(format:"%.2f",l_µH))µH λ=\(String(format:"%.4f",lambda_Wb*1000))mWb")
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            if case .sent = self.motorLimitsSendState { self.motorLimitsSendState = .idle }
+        }
+    }
+
+    /// Returns drivetrain SI params from the active VESC's MCCONF cache, or nil if not cached.
+    func drivetrainFromMCCONF() -> (poles: Int, gearRatio: Float, wheelDiameterMM: Float)? {
+        let cache: [UInt8]? = selectedCANID.map { rawMCConfByCANID[$0] } ?? rawMCConfLocal
+        guard let cache,
+              let dt = VESCProtocolParser.readDrivetrainFromMCConf(payload: cache) else { return nil }
+        return (dt.poles, dt.gearRatio, dt.wheelDiameterM * 1000.0)
+    }
+
+    /// Applies `profile` to every connected VESC.
+    ///
+    /// - `storeToFlash = true`:  patches each cached MCCONF and sends COMM_SET_MCCONF (full
+    ///   profile including ERPM / watt limits; always writes flash). Nodes without a cached config
+    ///   are skipped — auto-fetch on connect covers them automatically.
+    ///
+    /// - `storeToFlash = false`: sends COMM_SET_MCCONF_TEMP (firmware 6.x format) with all profile
+    ///   fields (current scale, ERPM limits, watt limits). RAM-only — resets on reboot.
+    ///   forwardCAN=true so the local VESC auto-forwards to all CAN nodes.
+    func applyProfile(_ profile: MotorProfile, storeToFlash: Bool = true) {
+        guard isConnected else { motorLimitsSendState = .failed("Not connected"); return }
+
+        var applied: [String] = []
+        var skipped: [String] = []
+
+        if storeToFlash {
+            // Full profile via COMM_SET_MCCONF (always writes flash)
+            if let localCache = rawMCConfLocal,
+               let pkt = VESCProtocolParser.mcconfPayloadWithProfile(fromReceivedPayload: localCache, profile: profile) {
+                bleManager.send(VESCProtocolParser.buildPacket(payload: pkt))
+                var u = pkt; u[0] = VESCCommand.getMCConf.rawValue; rawMCConfLocal = u
+                applied.append("local")
+            } else if rawMCConfLocal == nil { skipped.append("local") }
+
+            for node in canNodes {
+                let id = node.id
+                if let nodeCache = rawMCConfByCANID[id],
+                   let pkt = VESCProtocolParser.mcconfPayloadWithProfile(fromReceivedPayload: nodeCache, profile: profile) {
+                    bleManager.send(VESCProtocolParser.buildForwardCAN(toID: UInt8(id), commandPayload: pkt))
+                    var u = pkt; u[0] = VESCCommand.getMCConf.rawValue; rawMCConfByCANID[id] = u
+                    applied.append("CAN #\(id)")
+                } else { skipped.append("CAN #\(id)") }
+            }
+
+            guard !applied.isEmpty else {
+                motorLimitsSendState = .failed("No MCCONF cached — connecting auto-reads all VESCs")
+                return
+            }
+        } else {
+            // RAM-only via COMM_SET_MCCONF_TEMP (firmware 6.x): sends full profile including
+            // ERPM and watt limits. forwardCAN=true — local VESC auto-forwards to all CAN nodes.
+            let ramPayload = VESCProtocolParser.mcconfTempPayload(
+                currentMinScale: profile.currentMinScale,
+                currentMaxScale: profile.currentMaxScale,
+                minERPM: profile.minERPM,
+                maxERPM: profile.maxERPM,
+                wattMin: profile.wattMin,
+                wattMax: profile.wattMax,
+                store: false,
+                forwardCAN: true
+            )
+            bleManager.send(VESCProtocolParser.buildPacket(payload: ramPayload))
+            let canCount = canNodes.count
+            applied.append(canCount > 0 ? "local + \(canCount) CAN node(s) (auto-forwarded)" : "local")
+        }
+
+        motorProfile = profile
+
+        let skipSuffix = skipped.isEmpty ? "" : " · auto-fetching config for: \(skipped.joined(separator: ", "))"
+        let modeTag = storeToFlash ? "flash" : "RAM"
+        let msg = "[\(modeTag)] Applied to \(applied.joined(separator: ", "))\(skipSuffix)"
+        motorLimitsSendState = .sent(msg)
+        appendLog("[PROFILE] \(msg)")
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            if case .sent = self.motorLimitsSendState { self.motorLimitsSendState = .idle }
+        }
+    }
+
     /// Sends current motorLimits to a specific CAN node (ignores selectedCANID).
+    /// Uses COMM_SET_MCCONF when that node's config is cached; falls back to COMM_SET_MCCONF_TEMP.
     func sendMotorLimitsTo(canID: Int, storeToFlash: Bool = false) {
         guard isConnected else { motorLimitsSendState = .failed("Not connected"); return }
-        var payload: [UInt8] = [VESCCommand.setMCConfTemp.rawValue]
-        payload.append(storeToFlash ? 1 : 0)
-        payload.append(0)   // forward_can = false
-        payload.append(1)   // ack
-        payload.append(0)   // divide_by_controllers = false
-        appendFloat32BE(&payload, motorLimits.phaseCurrentMax)
-        appendFloat32BE(&payload, -abs(motorLimits.phaseCurrentMax))
-        appendFloat32BE(&payload, motorLimits.batteryCurrentMax)
-        appendFloat32BE(&payload, min(motorLimits.batteryCurrentRegen, 0))
-        appendFloat32BE(&payload, motorLimits.absCurrentMax)
-        bleManager.send(VESCProtocolParser.buildForwardCAN(toID: UInt8(canID), commandPayload: payload))
+
+        if let cache = rawMCConfByCANID[canID],
+           let writePayload = VESCProtocolParser.mcconfPayloadForWrite(fromReceivedPayload: cache, config: motorLimits) {
+            bleManager.send(VESCProtocolParser.buildForwardCAN(toID: UInt8(canID), commandPayload: writePayload))
+            motorLimitsSendState = .sent("Sent to CAN #\(canID) · flash")
+        } else {
+            var payload: [UInt8] = [VESCCommand.setMCConfTemp.rawValue]
+            payload.append(storeToFlash ? 1 : 0)
+            payload.append(0)
+            payload.append(1)
+            payload.append(0)
+            appendFloat32BE(&payload, motorLimits.phaseCurrentMax)
+            appendFloat32BE(&payload, -abs(motorLimits.phaseCurrentRegen))
+            appendFloat32BE(&payload, motorLimits.batteryCurrentMax)
+            appendFloat32BE(&payload, min(motorLimits.batteryCurrentRegen, 0))
+            appendFloat32BE(&payload, motorLimits.absCurrentMax)
+            bleManager.send(VESCProtocolParser.buildForwardCAN(toID: UInt8(canID), commandPayload: payload))
+            motorLimitsSendState = .sent("Sent to CAN #\(canID)\(storeToFlash ? " · saved" : "")")
+        }
         saveMotorLimits()
-        motorLimitsSendState = .sent("Sent to CAN #\(canID)\(storeToFlash ? " · saved" : "")")
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 3_000_000_000)
             if case .sent = self.motorLimitsSendState { self.motorLimitsSendState = .idle }
@@ -259,25 +506,35 @@ final class TelemetryViewModel: ObservableObject {
         peakMotorCurrentA = 0
     }
 
-    /// Sends current motor limits to the active VESC via COMM_SET_MCCONF_TEMP.
+    /// Sends motor settings to the active VESC.
+    /// Uses COMM_SET_MCCONF (full config, always flash) when a cached MCCONF is available
+    /// — this is required for observer type, FW settings, and phase regen.
+    /// Falls back to COMM_SET_MCCONF_TEMP (current limits only, RAM or flash) otherwise.
     func sendMotorLimits(storeToFlash: Bool) {
         guard isConnected else { motorLimitsSendState = .failed("Not connected"); return }
 
-        var payload: [UInt8] = [VESCCommand.setMCConfTemp.rawValue]
-        payload.append(storeToFlash ? 1 : 0)  // store
-        payload.append(0)                      // forward_can = false (we handle forwarding below)
-        payload.append(1)                      // ack
-        payload.append(0)                      // divide_by_controllers = false
-        appendFloat32BE(&payload, motorLimits.phaseCurrentMax)
-        appendFloat32BE(&payload, -abs(motorLimits.phaseCurrentMax))
-        appendFloat32BE(&payload, motorLimits.batteryCurrentMax)
-        appendFloat32BE(&payload, min(motorLimits.batteryCurrentRegen, 0))
-        appendFloat32BE(&payload, motorLimits.absCurrentMax)
+        let cache: [UInt8]? = selectedCANID.map { rawMCConfByCANID[$0] } ?? rawMCConfLocal
+        if let cache,
+           let writePayload = VESCProtocolParser.mcconfPayloadForWrite(fromReceivedPayload: cache, config: motorLimits) {
+            sendCommand(writePayload)
+            saveMotorLimits()
+            motorLimitsSendState = .sent("Sent & saved to flash")
+        } else {
+            var payload: [UInt8] = [VESCCommand.setMCConfTemp.rawValue]
+            payload.append(storeToFlash ? 1 : 0)
+            payload.append(0)
+            payload.append(1)
+            payload.append(0)
+            appendFloat32BE(&payload, motorLimits.phaseCurrentMax)
+            appendFloat32BE(&payload, -abs(motorLimits.phaseCurrentRegen))
+            appendFloat32BE(&payload, motorLimits.batteryCurrentMax)
+            appendFloat32BE(&payload, min(motorLimits.batteryCurrentRegen, 0))
+            appendFloat32BE(&payload, motorLimits.absCurrentMax)
+            sendCommand(payload)
+            saveMotorLimits()
+            motorLimitsSendState = .sent(storeToFlash ? "Sent & saved to flash" : "Sent (RAM only)")
+        }
 
-        sendCommand(payload)
-        saveMotorLimits()
-
-        motorLimitsSendState = .sent(storeToFlash ? "Sent & saved to flash" : "Sent (RAM only)")
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 3_000_000_000)
             if case .sent = self.motorLimitsSendState { self.motorLimitsSendState = .idle }
@@ -326,6 +583,25 @@ final class TelemetryViewModel: ObservableObject {
 
         case VESCCommand.setMCConfTemp.rawValue:
             appendLog("[MCCONF] Limits accepted by VESC")
+
+        case VESCCommand.measureRL.rawValue:
+            if let result = VESCProtocolParser.parseMeasureRLResponse(payload: payload) {
+                detectionState = .rlResult(r: result.r, l: result.l, ldLqDiff: result.ldLqDiff)
+                appendLog("[DETECT] R=\(String(format:"%.3f",result.r*1000))mΩ  L=\(String(format:"%.2f",result.l))µH  Ld-Lq=\(String(format:"%.2f",result.ldLqDiff))µH")
+            } else {
+                detectionState = .failed("R/L detection failed — check motor connection")
+                appendLog("[DETECT] R/L detection failed")
+            }
+
+        case VESCCommand.measureFluxLinkageOpenloop.rawValue:
+            if case .measuringLinkage(let r, let l, let ldLq) = detectionState,
+               let lambda = VESCProtocolParser.parseMeasureFluxLinkageOpenloopResponse(payload: payload) {
+                detectionState = .complete(r: r, l: l, ldLqDiff: ldLq, lambda: lambda)
+                appendLog("[DETECT] λ=\(String(format:"%.4f",lambda*1000))mWb")
+            } else {
+                detectionState = .failed("Flux linkage detection failed — try again with lower duty")
+                appendLog("[DETECT] Flux linkage detection failed")
+            }
 
         case 0:  // COMM_FW_VERSION
             if pendingLocalFWVersion {
@@ -411,15 +687,35 @@ final class TelemetryViewModel: ObservableObject {
     }
 
     private func handleMCConf(_ payload: [UInt8]) {
+        let wasBg = isBgFetchingMCConf
+        isBgFetchingMCConf = false
+
+        switch pendingMCConfSource {
+        case .local:       rawMCConfLocal = payload
+        case .can(let id): rawMCConfByCANID[id] = payload
+        }
+        pendingMCConfSource = .local
+
         do {
             let limits = try VESCProtocolParser.parseMCConfLimits(payload: payload)
             motorLimits = limits
             saveMotorLimits()
-            motorLimitsReadState = .loaded
-            appendLog("[MCCONF] Loaded: phase=\(Int(limits.phaseCurrentMax))A batt=\(Int(limits.batteryCurrentMax))A regen=\(Int(limits.batteryCurrentRegen))A abs=\(Int(limits.absCurrentMax))A")
+            if let prof = VESCProtocolParser.readProfileFromMCConf(payload: payload) {
+                motorProfile = prof
+            }
+            if !wasBg { motorLimitsReadState = .loaded }
+            appendLog("[MCCONF] Loaded: phase=\(Int(limits.phaseCurrentMax))A batt=\(Int(limits.batteryCurrentMax))A regen=\(Int(limits.batteryCurrentRegen))A abs=\(Int(limits.absCurrentMax))A observer=\(limits.observerType) fzv=\(Int(limits.zeroVectorFreqHz))Hz")
         } catch {
-            motorLimitsReadState = .failed(error.localizedDescription)
+            if !wasBg { motorLimitsReadState = .failed(error.localizedDescription) }
             appendLog("[MCCONF] Parse error: \(error.localizedDescription)")
+        }
+
+        // Drain the next bg fetch after a short pause to avoid flooding BLE
+        if wasBg {
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                self.drainBgMCConfQueue()
+            }
         }
     }
 
@@ -429,9 +725,9 @@ final class TelemetryViewModel: ObservableObject {
         let ids = VESCProtocolParser.parseCANPingResponse(payload: payload)
         for id in ids { mergeNodeID(id) }
         appendLog("[CAN] PING_CAN found \(ids.count) node(s): \(ids.map(String.init).joined(separator: ", "))")
-        // Fetch FW version for any node that doesn't have one yet
-        for id in ids where canNodes.first(where: { $0.id == id })?.hwVersion == nil {
-            requestFWVersion(canID: id)
+        for id in ids {
+            if canNodes.first(where: { $0.id == id })?.hwVersion == nil { requestFWVersion(canID: id) }
+            enqueueBgMCConfFetch(id)   // auto-fetch MCCONF so profiles can be applied immediately
         }
     }
 
@@ -474,11 +770,16 @@ final class TelemetryViewModel: ObservableObject {
                     self.connectionStateName = name
                     self.startPolling()
                     self.requestLocalFWVersion()
-                    // Enqueue FW requests for persisted CAN nodes; small delay lets the local
-                    // FW_VERSION response arrive first (local check is prioritised in handlePacket).
                     Task { @MainActor in
                         try? await Task.sleep(nanoseconds: 500_000_000)
-                        for id in self.persistedCANIDs {
+                        guard self.isConnected else { return }
+                        // Auto-fetch local MCCONF so profile can be applied without manual read
+                        self.enqueueBgMCConfFetch(nil)
+                        self.pingCAN()
+                        try? await Task.sleep(nanoseconds: 9_000_000_000)  // wait for 8 s scan
+                        for id in self.persistedCANIDs
+                            where self.canNodes.first(where: { $0.id == id })?.hwVersion == nil {
+                            guard self.isConnected else { break }
                             self.requestFWVersion(canID: id)
                         }
                     }
@@ -492,6 +793,10 @@ final class TelemetryViewModel: ObservableObject {
                     self.fwVersionQueue.removeAll()
                     self.pendingFWVersionCANID = nil
                     self.pendingLocalFWVersion = false
+                    self.bgMCConfQueue.removeAll()
+                    self.isBgFetchingMCConf = false
+                    self.rawMCConfLocal = nil
+                    self.rawMCConfByCANID.removeAll()
                     // Restore persisted nodes; clear any scan-only discoveries
                     self.canNodes = self.persistedCANIDs.map { CANNode(id: $0) }
                     self.selectedCANID = nil

@@ -4,18 +4,31 @@ struct MotorConfigView: View {
     @ObservedObject var vm: TelemetryViewModel
     @Environment(\.dismiss) private var dismiss
 
+    // Current limits
     @State private var battMax: String = ""
     @State private var battRegen: String = ""
     @State private var phaseMax: String = ""
+    @State private var phaseRegen: String = ""
     @State private var absMax: String = ""
+
+    // FOC settings
+    @State private var observerType: Int = 3
+    @State private var zeroVectorFreq: String = ""
+    @State private var fwCurrentMax: String = ""
+    @State private var fwDutyStart: String = ""
+
     @State private var storeToFlash = false
 
     private var allValid: Bool {
         guard
-            let bm = Float(battMax),  bm > 0,
-            let br = Float(battRegen), br <= 0,
-            let pm = Float(phaseMax), pm > 0,
-            let am = Float(absMax),   am > 0
+            let bm = Float(battMax),     bm > 0,
+            let br = Float(battRegen),   br <= 0,
+            let pm = Float(phaseMax),    pm > 0,
+            let pr = Float(phaseRegen),  pr <= 0,
+            let am = Float(absMax),      am > 0,
+            let fz = Float(zeroVectorFreq), fz > 0,
+            let fw = Float(fwCurrentMax), fw >= 0,
+            let fd = Float(fwDutyStart), fd >= 0, fd <= 1
         else { return false }
         return true
     }
@@ -26,9 +39,10 @@ struct MotorConfigView: View {
                 readSection
                 batterySection
                 phaseSection
+                focSection
                 actionSection
             }
-            .navigationTitle("Motor Config")
+            .navigationTitle(vm.activeVESCLabel.isEmpty ? "Motor Config" : "Motor Config · \(vm.activeVESCLabel)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -37,7 +51,6 @@ struct MotorConfigView: View {
             }
             .onAppear {
                 loadCurrentValues()
-                // Auto-read from VESC when the view opens and we're connected
                 if vm.isConnected && vm.motorLimitsReadState != .reading {
                     vm.fetchMotorConfig()
                 }
@@ -70,7 +83,8 @@ struct MotorConfigView: View {
                         Text("Reading…").font(.caption).foregroundStyle(.secondary)
                     }
                 case .loaded:
-                    Label("Loaded", systemImage: "checkmark.circle.fill")
+                    Label(vm.hasMCConfCache ? "Full config loaded" : "Loaded",
+                          systemImage: "checkmark.circle.fill")
                         .font(.caption).foregroundStyle(.green)
                 case .failed(let msg):
                     Label(msg, systemImage: "xmark.circle")
@@ -80,12 +94,17 @@ struct MotorConfigView: View {
                 }
             }
         } header: {
-            Text("Current VESC Values")
+            Text(vm.activeVESCLabel.isEmpty ? "VESC" : vm.activeVESCLabel)
         } footer: {
-            Text(vm.isConnected
-                 ? "Reads l_current_max, l_in_current_max, l_in_current_min and l_abs_current_max from the active VESC."
-                 : "Connect to a VESC to read its current limits.")
-                .font(.caption)
+            if vm.hasMCConfCache {
+                Text("Full config cached — Send will use COMM_SET_MCCONF (flash write). All settings including observer and field weakening will apply.")
+                    .font(.caption)
+            } else {
+                Text(vm.isConnected
+                     ? "Read config to enable observer and field weakening settings. Without cache, only current limits can be sent (COMM_SET_MCCONF_TEMP)."
+                     : "Connect to a VESC to read its motor config.")
+                    .font(.caption)
+            }
         }
     }
 
@@ -93,20 +112,16 @@ struct MotorConfigView: View {
 
     private var batterySection: some View {
         Section {
-            currentField("Max Battery Amps", placeholder: "40", text: $battMax,
-                         hint: "Current drawn from pack while accelerating (positive)")
-            currentField("Max Regen Amps", placeholder: "-12", text: $battRegen,
-                         hint: "Current returned to pack while braking (negative, e.g. -12)")
-
+            ampField("Max Battery Amps",   placeholder: "40",  text: $battMax,
+                     hint: "Current drawn from pack while accelerating")
+            ampField("Max Battery Regen",  placeholder: "-12", text: $battRegen,
+                     hint: "Current returned to pack while braking (negative, e.g. -12)")
             if let br = Float(battRegen), br > 0 {
-                Label("Regen must be negative (e.g. -12)", systemImage: "exclamationmark.triangle")
+                Label("Battery regen must be negative", systemImage: "exclamationmark.triangle")
                     .font(.caption).foregroundStyle(.orange)
             }
         } header: {
             Text("Battery Limits")
-        } footer: {
-            Text("Regen is negative because current flows back into the pack.")
-                .font(.caption)
         }
     }
 
@@ -114,15 +129,61 @@ struct MotorConfigView: View {
 
     private var phaseSection: some View {
         Section {
-            currentField("Max Phase Current", placeholder: "60", text: $phaseMax,
-                         hint: "Peak current through motor windings (positive)")
-            currentField("Max Absolute Current", placeholder: "130", text: $absMax,
-                         hint: "Hard cutoff — motor shuts off if exceeded")
+            ampField("Max Phase Current",  placeholder: "60",  text: $phaseMax,
+                     hint: "Peak current through motor windings")
+            ampField("Max Phase Regen",    placeholder: "-60", text: $phaseRegen,
+                     hint: "Phase braking current limit (negative, e.g. -60)")
+            ampField("Max Absolute Current", placeholder: "130", text: $absMax,
+                     hint: "Hard cutoff — motor shuts off if exceeded")
+            if let pr = Float(phaseRegen), pr > 0 {
+                Label("Phase regen must be negative", systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundStyle(.orange)
+            }
         } header: {
             Text("Motor Limits")
+        }
+    }
+
+    // MARK: - FOC Section
+
+    private var focSection: some View {
+        Section {
+            Picker("Observer Type", selection: $observerType) {
+                ForEach(0..<MotorLimitsConfig.observerNames.count, id: \.self) { i in
+                    Text(MotorLimitsConfig.observerNames[i]).tag(i)
+                }
+            }
+
+            LabeledContent("Zero Vector Freq") {
+                HStack(spacing: 4) {
+                    TextField("30000", text: $zeroVectorFreq)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.trailing)
+                    Text("Hz").foregroundStyle(.secondary).font(.subheadline)
+                }
+            }
+
+            ampField("Field Weakening Current", placeholder: "0", text: $fwCurrentMax,
+                     hint: "Max FW current (A). 0 = field weakening disabled")
+
+            LabeledContent("FW Duty Start") {
+                HStack(spacing: 4) {
+                    TextField("0.90", text: $fwDutyStart)
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                    Text("0–1").foregroundStyle(.secondary).font(.subheadline)
+                }
+            }
+        } header: {
+            Text("FOC Settings")
         } footer: {
-            Text("Absolute current should be higher than phase current — it's a safety stop, not a normal operating limit.")
-                .font(.caption)
+            if !vm.hasMCConfCache {
+                Label("Read config first to apply FOC settings.", systemImage: "info.circle")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                Text("Observer type, FW settings, and zero vector frequency will be written on Send.")
+                    .font(.caption)
+            }
         }
     }
 
@@ -130,14 +191,16 @@ struct MotorConfigView: View {
 
     private var actionSection: some View {
         Section {
-            Toggle(isOn: $storeToFlash) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Save to VESC Flash")
-                    Text("Persists after power cycle")
-                        .font(.caption).foregroundStyle(.secondary)
+            if !vm.hasMCConfCache {
+                Toggle(isOn: $storeToFlash) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Save to VESC Flash")
+                        Text("Persists after power cycle")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                 }
+                .tint(.orange)
             }
-            .tint(.orange)
 
             Button { applyAndSend() } label: {
                 HStack {
@@ -161,12 +224,15 @@ struct MotorConfigView: View {
         } header: {
             Text("Apply")
         } footer: {
-            if storeToFlash {
+            if vm.hasMCConfCache {
+                Label("Full config write — always saves to flash.", systemImage: "flame")
+                    .font(.caption).foregroundStyle(.orange)
+            } else if storeToFlash {
                 Label("Flash write is permanent. Verify values are safe for your motor.",
                       systemImage: "exclamationmark.triangle.fill")
                     .font(.caption).foregroundStyle(.orange)
             } else {
-                Text("Without \"Save to Flash\", limits reset to VESC defaults on next power cycle.")
+                Text("Without \"Save to Flash\", current limits reset to VESC defaults on next power cycle. FOC settings require Read + flash write.")
                     .font(.caption)
             }
         }
@@ -175,8 +241,8 @@ struct MotorConfigView: View {
     // MARK: - Helpers
 
     @ViewBuilder
-    private func currentField(_ label: String, placeholder: String,
-                               text: Binding<String>, hint: String) -> some View {
+    private func ampField(_ label: String, placeholder: String,
+                           text: Binding<String>, hint: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             LabeledContent(label) {
                 HStack(spacing: 4) {
@@ -192,28 +258,48 @@ struct MotorConfigView: View {
     }
 
     private func loadCurrentValues() {
-        battMax   = fmt(vm.motorLimits.batteryCurrentMax)
-        battRegen = fmt(vm.motorLimits.batteryCurrentRegen)
-        phaseMax  = fmt(vm.motorLimits.phaseCurrentMax)
-        absMax    = fmt(vm.motorLimits.absCurrentMax)
+        battMax      = fmt(vm.motorLimits.batteryCurrentMax)
+        battRegen    = fmt(vm.motorLimits.batteryCurrentRegen)
+        phaseMax     = fmt(vm.motorLimits.phaseCurrentMax)
+        phaseRegen   = fmt(vm.motorLimits.phaseCurrentRegen)
+        absMax       = fmt(vm.motorLimits.absCurrentMax)
+        observerType = vm.motorLimits.observerType
+        zeroVectorFreq  = fmt(vm.motorLimits.zeroVectorFreqHz)
+        fwCurrentMax    = fmt(vm.motorLimits.fieldWeakeningCurrentMax)
+        fwDutyStart     = fmtDuty(vm.motorLimits.fieldWeakeningDutyStart)
     }
 
     private func applyAndSend() {
-        guard let bm = Float(battMax),  bm > 0,
-              let br = Float(battRegen), br <= 0,
-              let pm = Float(phaseMax), pm > 0,
-              let am = Float(absMax),   am > 0 else { return }
+        guard
+            let bm = Float(battMax),     bm > 0,
+            let br = Float(battRegen),   br <= 0,
+            let pm = Float(phaseMax),    pm > 0,
+            let pr = Float(phaseRegen),  pr <= 0,
+            let am = Float(absMax),      am > 0,
+            let fz = Float(zeroVectorFreq), fz > 0,
+            let fw = Float(fwCurrentMax), fw >= 0,
+            let fd = Float(fwDutyStart), fd >= 0, fd <= 1
+        else { return }
 
-        vm.motorLimits.batteryCurrentMax   = bm
-        vm.motorLimits.batteryCurrentRegen = br
-        vm.motorLimits.phaseCurrentMax     = pm
-        vm.motorLimits.absCurrentMax       = am
+        vm.motorLimits.batteryCurrentMax         = bm
+        vm.motorLimits.batteryCurrentRegen       = br
+        vm.motorLimits.phaseCurrentMax           = pm
+        vm.motorLimits.phaseCurrentRegen         = pr
+        vm.motorLimits.absCurrentMax             = am
+        vm.motorLimits.observerType              = observerType
+        vm.motorLimits.zeroVectorFreqHz          = fz
+        vm.motorLimits.fieldWeakeningCurrentMax  = fw
+        vm.motorLimits.fieldWeakeningDutyStart   = fd
 
         vm.sendMotorLimits(storeToFlash: storeToFlash)
     }
 
     private func fmt(_ f: Float) -> String {
         f.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(f)) : String(f)
+    }
+
+    private func fmtDuty(_ f: Float) -> String {
+        String(format: "%.2f", f)
     }
 }
 
