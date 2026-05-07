@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// A single rounded-rectangle tile showing a label, animated value, and unit.
 struct MetricCard: View {
     let label: String
     let value: String
@@ -9,6 +8,8 @@ struct MetricCard: View {
     var icon: String? = nil
     var warningThreshold: Double? = nil
     var currentValue: Double? = nil
+    var animated: Bool = true
+    var lightMode: Bool = false
 
     private var isWarning: Bool {
         guard let t = warningThreshold, let v = currentValue else { return false }
@@ -32,8 +33,8 @@ struct MetricCard: View {
                 Text(value)
                     .font(.system(size: 28, weight: .semibold, design: .rounded))
                     .foregroundStyle(isWarning ? .red : .primary)
-                    .contentTransition(.numericText())
-                    .animation(.easeInOut(duration: 0.2), value: value)
+                    .contentTransition(animated ? .numericText() : .identity)
+                    .animation(animated ? .easeInOut(duration: 0.2) : nil, value: value)
 
                 Text(unit)
                     .font(.caption)
@@ -42,21 +43,25 @@ struct MetricCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(lightMode ? AnyShapeStyle(Color(.systemGray6)) : AnyShapeStyle(.ultraThinMaterial))
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(isWarning ? Color.red.opacity(0.6) : accentColor.opacity(0.15), lineWidth: 1)
+                .strokeBorder(isWarning ? Color.red.opacity(0.6) : accentColor.opacity(lightMode ? 0.4 : 0.15), lineWidth: 1)
         )
     }
 }
 
-/// A thin horizontal progress-bar card — useful for duty cycle and battery.
 struct BarMetricCard: View {
     let label: String
-    let value: Double   // 0…1 fraction
+    let value: Double
     let displayText: String
     var accentColor: Color = .cyan
     var icon: String? = nil
+    var animated: Bool = true
+    var lightMode: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -73,8 +78,8 @@ struct BarMetricCard: View {
                 Text(displayText)
                     .font(.system(.caption, design: .rounded).weight(.semibold))
                     .foregroundStyle(.primary)
-                    .contentTransition(.numericText())
-                    .animation(.easeInOut(duration: 0.2), value: displayText)
+                    .contentTransition(animated ? .numericText() : .identity)
+                    .animation(animated ? .easeInOut(duration: 0.2) : nil, value: displayText)
             }
 
             GeometryReader { geo in
@@ -85,16 +90,19 @@ struct BarMetricCard: View {
                     Capsule()
                         .fill(barColor)
                         .frame(width: geo.size.width * CGFloat(max(0, min(1, abs(value)))), height: 8)
-                        .animation(.easeInOut(duration: 0.15), value: value)
+                        .animation(animated ? .easeInOut(duration: 0.15) : nil, value: value)
                 }
             }
             .frame(height: 8)
         }
         .padding(14)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(lightMode ? AnyShapeStyle(Color(.systemGray6)) : AnyShapeStyle(.ultraThinMaterial))
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(accentColor.opacity(0.15), lineWidth: 1)
+                .strokeBorder(accentColor.opacity(lightMode ? 0.4 : 0.15), lineWidth: 1)
         )
     }
 

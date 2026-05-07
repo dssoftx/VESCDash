@@ -8,8 +8,21 @@ struct DashboardView: View {
     @State private var showLog = false
     @State private var showScan = false
     @State private var showMotorWizard = false
+    @State private var showUISettings = false
 
     private var t: TelemetryData { vm.telemetry }
+    private var ui: UISettings { vm.uiSettings }
+
+    // Suppressed display values — clamp near-zero noise to exactly 0 at standstill
+    private var displaySpeedKMH: Double {
+        ui.suppressIdleAnomalies && abs(vm.speedKMH) < 1.0 ? 0.0 : vm.speedKMH
+    }
+    private var displayDuty: Double {
+        ui.suppressIdleAnomalies && abs(Double(t.dutyCycle)) < 0.01 ? 0.0 : Double(t.dutyCycle)
+    }
+    private var displayRPM: Int32 {
+        ui.suppressIdleAnomalies && abs(vm.speedKMH) < 1.0 ? 0 : t.rpm
+    }
 
     var body: some View {
         NavigationStack {
@@ -27,10 +40,13 @@ struct DashboardView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
             }
-            .background(Color.black.ignoresSafeArea())
+            .background(
+                (ui.lightMode ? Color(.systemGroupedBackground) : Color.black)
+                    .ignoresSafeArea()
+            )
             .navigationTitle("VESC Dashboard")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarColorScheme(ui.lightMode ? nil : .dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     connectionButton
@@ -51,6 +67,9 @@ struct DashboardView: View {
                         }
                         Button { showSettings = true } label: {
                             Label("Settings", systemImage: "gearshape")
+                        }
+                        Button { showUISettings = true } label: {
+                            Label("UI Settings", systemImage: "paintbrush")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
@@ -75,50 +94,52 @@ struct DashboardView: View {
             .sheet(isPresented: $showMotorProfile) {
                 MotorProfileListView(vm: vm)
             }
+            .sheet(isPresented: $showUISettings) {
+                UISettingsView(vm: vm)
+            }
         }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(ui.lightMode ? .light : .dark)
     }
 
     // MARK: - Speed Gauge
 
     private var speedGauge: some View {
         ZStack {
-            // Background arc
             Circle()
                 .trim(from: 0.15, to: 0.85)
-                .stroke(.white.opacity(0.06), style: StrokeStyle(lineWidth: 18, lineCap: .round))
+                .stroke(ui.lightMode ? Color(.systemGray4) : .white.opacity(0.06),
+                        style: StrokeStyle(lineWidth: 18, lineCap: .round))
                 .rotationEffect(.degrees(90))
                 .frame(width: 220, height: 220)
 
-            // Speed arc
-            let fraction = min(1.0, abs(vm.speedKMH) / 60.0)
+            let fraction = min(1.0, abs(displaySpeedKMH) / 60.0)
+            let fillColors: [Color] = ui.lightMode ? [Color(.systemGray2), Color(.systemGray3)] : [.cyan, .blue]
             Circle()
                 .trim(from: 0.15, to: 0.15 + 0.7 * fraction)
                 .stroke(
-                    LinearGradient(colors: [.cyan, .blue], startPoint: .leading, endPoint: .trailing),
+                    LinearGradient(colors: fillColors, startPoint: .leading, endPoint: .trailing),
                     style: StrokeStyle(lineWidth: 18, lineCap: .round)
                 )
                 .rotationEffect(.degrees(90))
                 .frame(width: 220, height: 220)
-                .animation(.easeInOut(duration: 0.15), value: fraction)
+                .animation(ui.reduceStatisticsAnimations ? nil : .easeInOut(duration: 0.15), value: fraction)
 
-            // Center readout
             VStack(spacing: 2) {
-                Text(String(format: "%.1f", vm.speedKMH))
+                Text(String(format: "%.1f", displaySpeedKMH))
                     .font(.system(size: 56, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .contentTransition(.numericText(countsDown: vm.speedKMH < 0))
-                    .animation(.easeInOut(duration: 0.15), value: vm.speedKMH)
+                    .foregroundStyle(.primary)
+                    .contentTransition(ui.reduceStatisticsAnimations ? .identity : .numericText(countsDown: displaySpeedKMH < 0))
+                    .animation(ui.reduceStatisticsAnimations ? nil : .easeInOut(duration: 0.15), value: displaySpeedKMH)
 
                 Text("km/h")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                Text("\(t.rpm) ERPM")
+                Text("\(displayRPM) ERPM")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .contentTransition(.numericText())
-                    .animation(.easeInOut(duration: 0.15), value: t.rpm)
+                    .foregroundStyle(.secondary)
+                    .contentTransition(ui.reduceStatisticsAnimations ? .identity : .numericText())
+                    .animation(ui.reduceStatisticsAnimations ? nil : .easeInOut(duration: 0.15), value: displayRPM)
             }
         }
         .padding(.top, 8)
@@ -135,14 +156,18 @@ struct DashboardView: View {
                 accentColor: .green,
                 icon: "bolt.fill",
                 warningThreshold: 36.0,
-                currentValue: Double(t.inputVoltage)
+                currentValue: Double(t.inputVoltage),
+                animated: !ui.reduceStatisticsAnimations,
+                lightMode: ui.lightMode
             )
             MetricCard(
                 label: "Battery A",
                 value: String(format: "%.1f", t.batteryCurrent),
                 unit: "A",
                 accentColor: .yellow,
-                icon: "battery.100"
+                icon: "battery.100",
+                animated: !ui.reduceStatisticsAnimations,
+                lightMode: ui.lightMode
             )
         }
     }
@@ -158,7 +183,9 @@ struct DashboardView: View {
                 accentColor: .orange,
                 icon: "thermometer.medium",
                 warningThreshold: 80,
-                currentValue: Double(t.mosfetTemperature)
+                currentValue: Double(t.mosfetTemperature),
+                animated: !ui.reduceStatisticsAnimations,
+                lightMode: ui.lightMode
             )
             MetricCard(
                 label: "Motor Temp",
@@ -167,7 +194,9 @@ struct DashboardView: View {
                 accentColor: .orange,
                 icon: "thermometer.high",
                 warningThreshold: 100,
-                currentValue: Double(t.motorTemperature)
+                currentValue: Double(t.motorTemperature),
+                animated: !ui.reduceStatisticsAnimations,
+                lightMode: ui.lightMode
             )
         }
     }
@@ -181,14 +210,18 @@ struct DashboardView: View {
                 value: String(format: "%.1f", t.motorCurrent),
                 unit: "A",
                 accentColor: .cyan,
-                icon: "bolt.ring.closed"
+                icon: "bolt.ring.closed",
+                animated: !ui.reduceStatisticsAnimations,
+                lightMode: ui.lightMode
             )
             MetricCard(
                 label: "Power",
                 value: String(format: "%.0f", t.inputVoltage * t.batteryCurrent),
                 unit: "W",
                 accentColor: .purple,
-                icon: "flame.fill"
+                icon: "flame.fill",
+                animated: !ui.reduceStatisticsAnimations,
+                lightMode: ui.lightMode
             )
         }
     }
@@ -198,10 +231,12 @@ struct DashboardView: View {
     private var dutyCycleBar: some View {
         BarMetricCard(
             label: "Duty Cycle",
-            value: Double(t.dutyCycle),
-            displayText: String(format: "%.1f%%", t.dutyCycle * 100),
+            value: displayDuty,
+            displayText: String(format: "%.1f%%", displayDuty * 100),
             accentColor: .cyan,
-            icon: "gauge.with.needle"
+            icon: "gauge.with.needle",
+            animated: !ui.reduceStatisticsAnimations,
+            lightMode: ui.lightMode
         )
     }
 
@@ -214,14 +249,18 @@ struct DashboardView: View {
                 value: String(format: "%.2f", t.wattHours),
                 unit: "Wh",
                 accentColor: .indigo,
-                icon: "chart.line.downtrend.xyaxis"
+                icon: "chart.line.downtrend.xyaxis",
+                animated: !ui.reduceStatisticsAnimations,
+                lightMode: ui.lightMode
             )
             MetricCard(
                 label: "Ah Used",
                 value: String(format: "%.3f", t.ampHours),
                 unit: "Ah",
                 accentColor: .teal,
-                icon: "minus.forwardslash.plus"
+                icon: "minus.forwardslash.plus",
+                animated: !ui.reduceStatisticsAnimations,
+                lightMode: ui.lightMode
             )
         }
     }
@@ -229,47 +268,47 @@ struct DashboardView: View {
     // MARK: - Peak Stats
 
     private var peakStatsRow: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             HStack {
                 Label("Session Peak", systemImage: "chart.line.uptrend.xyaxis")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Button {
-                    vm.resetPeakStats()
-                } label: {
-                    Text("Reset")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+                Button { vm.resetPeakStats() } label: {
+                    Text("Reset").font(.caption).foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 2)
 
-            HStack(spacing: 12) {
-                MetricCard(
-                    label: "Top Speed",
-                    value: String(format: "%.1f", vm.peakSpeedKMH),
-                    unit: "km/h",
-                    accentColor: .cyan,
-                    icon: "speedometer"
-                )
-                MetricCard(
-                    label: "Peak Power",
-                    value: String(format: "%.0f", vm.peakPowerW),
-                    unit: "W",
-                    accentColor: .purple,
-                    icon: "bolt.fill"
-                )
-                MetricCard(
-                    label: "Peak Motor A",
-                    value: String(format: "%.1f", vm.peakMotorCurrentA),
-                    unit: "A",
-                    accentColor: .orange,
-                    icon: "bolt.ring.closed"
-                )
+            HStack(spacing: 0) {
+                peakCell("Top Speed",    String(format: "%.1f", vm.peakSpeedKMH),      "km/h")
+                Rectangle().fill(ui.lightMode ? Color(.systemGray4) : .white.opacity(0.12)).frame(width: 1, height: 28)
+                peakCell("Peak Power",   String(format: "%.0f", vm.peakPowerW),         "W")
+                Rectangle().fill(ui.lightMode ? Color(.systemGray4) : .white.opacity(0.12)).frame(width: 1, height: 28)
+                peakCell("Peak Motor A", String(format: "%.1f", vm.peakMotorCurrentA),  "A")
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(ui.lightMode ? Color(.systemGray6) : .white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
         }
+    }
+
+    private func peakCell(_ label: String, _ value: String, _ unit: String) -> some View {
+        VStack(spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.primary)
+                Text(unit)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+            Text(label)
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Fault Banner
@@ -332,5 +371,8 @@ struct DashboardView: View {
         return t
     }()
     vm.speedKMH = 32.4
+    vm.peakSpeedKMH = 48.2
+    vm.peakPowerW = 1840
+    vm.peakMotorCurrentA = 42.1
     return DashboardView(vm: vm)
 }

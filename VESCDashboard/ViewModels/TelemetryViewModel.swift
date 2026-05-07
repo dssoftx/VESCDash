@@ -51,7 +51,12 @@ struct DrivetrainSettings: Codable {
 
 // MARK: - ViewModel
 
-@MainActor
+struct UISettings: Codable {
+    var suppressIdleAnomalies: Bool = false
+    var reduceStatisticsAnimations: Bool = false
+    var lightMode: Bool = false
+}
+
 final class TelemetryViewModel: ObservableObject {
 
     // MARK: Live telemetry
@@ -65,6 +70,7 @@ final class TelemetryViewModel: ObservableObject {
 
     // MARK: Settings
     @Published var settings = DrivetrainSettings()
+    @Published var uiSettings = UISettings()
     @Published var motorLimits = MotorLimitsConfig()
     @Published var motorProfile = MotorProfile()
     @Published var savedProfiles: [MotorProfile] = []
@@ -469,6 +475,10 @@ final class TelemetryViewModel: ObservableObject {
         if let d = try? JSONEncoder().encode(settings)     { UserDefaults.standard.set(d, forKey: "drivetrainSettings") }
     }
 
+    func saveUISettings() {
+        if let d = try? JSONEncoder().encode(uiSettings)   { UserDefaults.standard.set(d, forKey: "uiSettings") }
+    }
+
     func saveMotorLimits() {
         if let d = try? JSONEncoder().encode(motorLimits)  { UserDefaults.standard.set(d, forKey: "motorLimitsConfig") }
     }
@@ -754,6 +764,8 @@ final class TelemetryViewModel: ObservableObject {
         }
         if let d = UserDefaults.standard.data(forKey: "savedMotorProfiles"),
            let profiles = try? JSONDecoder().decode([MotorProfile].self, from: d) { savedProfiles = profiles }
+        if let d = UserDefaults.standard.data(forKey: "uiSettings"),
+           let ui = try? JSONDecoder().decode(UISettings.self, from: d) { uiSettings = ui }
     }
 
     private func saveCANIDs() {

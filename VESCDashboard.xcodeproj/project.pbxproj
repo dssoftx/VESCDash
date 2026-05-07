@@ -23,6 +23,7 @@
 		A1B2C3D4E5F601234567890A /* MotorWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6012345678901 /* MotorWizardView.swift */; };
 		B2C3D4E5F601234567890AB1 /* MotorProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60123456789012 /* MotorProfileView.swift */; };
 		C3D4E5F690AB01234567890A /* MotorProfileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F690AB012345678901 /* MotorProfileListView.swift */; };
+		D4E5F6A7B8C901234567890A /* UISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9012345678901 /* UISettingsView.swift */; };
 		A82B11483A61FB04B020FF6E /* DeviceScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A7097D51626E63D330B6B02 /* DeviceScanView.swift */; };
 		CC7CED3E6B7052E1BEABFD3E /* VESCProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE94DA994F5C1AE16A0736AE /* VESCProtocolTests.swift */; };
 		D6D29ECBC1C4D5156B9C9430 /* TelemetryData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F93404B5BE442CCB2B3190 /* TelemetryData.swift */; };
@@ -53,6 +54,7 @@
 		A1B2C3D4E5F6012345678901 /* MotorWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorWizardView.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60123456789012 /* MotorProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorProfileView.swift; sourceTree = "<group>"; };
 		C3D4E5F690AB012345678901 /* MotorProfileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorProfileListView.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C9012345678901 /* UISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UISettingsView.swift; sourceTree = "<group>"; };
 		9D791A7695E4CE6D73FA5DFE /* VESCDashboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VESCDashboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B6F93404B5BE442CCB2B3190 /* TelemetryData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryData.swift; sourceTree = "<group>"; };
 		BE0C9F4C6DC173512DE83460 /* VESCDashboardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VESCDashboardApp.swift; sourceTree = "<group>"; };
@@ -135,6 +137,7 @@
 				B2C3D4E5F60123456789012 /* MotorProfileView.swift */,
 				C3D4E5F690AB012345678901 /* MotorProfileListView.swift */,
 				E6A7D9CF59FE19448E53122E /* SettingsView.swift */,
+				D4E5F6A7B8C9012345678901 /* UISettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -257,6 +260,7 @@
 				C3D4E5F690AB01234567890A /* MotorProfileListView.swift in Sources */,
 				EFDCFA0987598A6216E56D03 /* MotorLimitsConfig.swift in Sources */,
 				8654F6946557E7FEE0503537 /* SettingsView.swift in Sources */,
+				D4E5F6A7B8C901234567890A /* UISettingsView.swift in Sources */,
 				D6D29ECBC1C4D5156B9C9430 /* TelemetryData.swift in Sources */,
 				31764DF271176853A9FCC024 /* TelemetryViewModel.swift in Sources */,
 				745074AFA04B126B2833DF1E /* VESCDashboardApp.swift in Sources */,
