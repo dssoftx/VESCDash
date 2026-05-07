@@ -44,6 +44,18 @@ struct UISettingsView: View {
                     Text("Switches the dashboard to a light colour scheme.")
                         .font(.caption)
                 }
+
+                Section {
+                    Toggle(isOn: Binding(
+                        get: { vm.uiSettings.showGPSSpeed },
+                        set: { vm.uiSettings.showGPSSpeed = $0; vm.saveUISettings() }
+                    )) {
+                        Label("GPS Speed Overlay", systemImage: "location.fill")
+                    }
+                } footer: {
+                    Text("Shows phone GPS speed under the VESC speed gauge. Useful for verifying accuracy on high-speed runs. Requires location permission.")
+                        .font(.caption)
+                }
             }
             .navigationTitle("UI Settings")
             .navigationBarTitleDisplayMode(.inline)

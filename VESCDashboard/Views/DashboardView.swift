@@ -140,9 +140,40 @@ struct DashboardView: View {
                     .foregroundStyle(.secondary)
                     .contentTransition(ui.reduceStatisticsAnimations ? .identity : .numericText())
                     .animation(ui.reduceStatisticsAnimations ? nil : .easeInOut(duration: 0.15), value: displayRPM)
+
+                if ui.showGPSSpeed {
+                    gpsSpeedBadge
+                }
             }
         }
         .padding(.top, 8)
+    }
+
+    // MARK: - GPS Speed Badge
+
+    @ViewBuilder
+    private var gpsSpeedBadge: some View {
+        if let gps = vm.gpsSpeedKMH {
+            HStack(spacing: 3) {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 9))
+                Text(String(format: "%.1f", gps))
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .contentTransition(ui.reduceStatisticsAnimations ? .identity : .numericText())
+                    .animation(ui.reduceStatisticsAnimations ? nil : .easeInOut(duration: 0.2), value: gps)
+                Text("GPS")
+                    .font(.system(size: 10))
+            }
+            .foregroundStyle(.green)
+        } else {
+            HStack(spacing: 3) {
+                Image(systemName: "location.slash")
+                    .font(.system(size: 9))
+                Text("GPS…")
+                    .font(.system(size: 10))
+            }
+            .foregroundStyle(.secondary)
+        }
     }
 
     // MARK: - Voltage + Current Row

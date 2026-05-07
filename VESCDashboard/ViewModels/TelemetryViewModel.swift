@@ -55,6 +55,7 @@ struct UISettings: Codable {
     var suppressIdleAnomalies: Bool = false
     var reduceStatisticsAnimations: Bool = false
     var lightMode: Bool = false
+    var showGPSSpeed: Bool = false
 }
 
 final class TelemetryViewModel: ObservableObject {
@@ -108,6 +109,10 @@ final class TelemetryViewModel: ObservableObject {
         if let id = selectedCANID { return rawMCConfByCANID[id] != nil }
         return rawMCConfLocal != nil
     }
+
+    // MARK: GPS
+    let locationManager = LocationManager()
+    @Published var gpsSpeedKMH: Double? = nil
 
     // MARK: Connection
     @Published var logs: [String] = []
@@ -848,6 +853,20 @@ final class TelemetryViewModel: ObservableObject {
             .receive(on: RunLoop.main)
             .sink { [weak self] line in self?.appendLog(line) }
             .store(in: &cancellables)
+
+        $uiSettings
+            .map(\.showGPSSpeed)
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] enabled in
+                if enabled { self?.locationManager.start() }
+                else       { self?.locationManager.stop() }
+            }
+            .store(in: &cancellables)
+
+        locationManager.$speedKMH
+            .receive(on: RunLoop.main)
+            .assign(to: &$gpsSpeedKMH)
     }
 
     // MARK: - Log

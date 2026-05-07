@@ -18,6 +18,8 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>VESCDash uses GPS to show your real-world speed alongside VESC-reported speed, useful for verifying accuracy on high-speed runs.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>VESCDashboard uses Bluetooth to connect to your VESC motor controller and display real-time telemetry data.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
