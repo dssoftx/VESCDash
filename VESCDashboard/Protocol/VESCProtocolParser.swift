@@ -343,6 +343,10 @@ enum VESCProtocolParser {
     // MARK: - MCCONF read helpers for drivetrain / FOC params
     //
     // Byte offsets (verified against firmware 6.05 parameters_mcconf.xml via SerOrder):
+    //   l_min_vin           [53-56]    float32 — absolute hardware min voltage (hard cutoff)
+    //   l_max_vin           [57-60]    float32 — absolute hardware max voltage
+    //   l_battery_cut_start [61-64]    float32 — voltage to start linearly reducing output
+    //   l_battery_cut_end   [65-68]    float32 — voltage to stop output entirely
     //   foc_current_kp      [124-127]  float32
     //   foc_current_ki      [128-131]  float32
     //   foc_f_zv            [132-135]  float32 (Hz)
@@ -376,7 +380,11 @@ enum VESCProtocolParser {
     static func mcconfPayloadWithFOCDetection(
         fromReceivedPayload payload: [UInt8],
         r_Ω: Float, l_µH: Float, ldLqDiff_µH: Float, lambda_Wb: Float, tc_µs: Float,
-        siMotorPoles: Int, siGearRatio: Float, siWheelDiameterM: Float
+        siMotorPoles: Int, siGearRatio: Float, siWheelDiameterM: Float,
+        batteryMinVin: Float? = nil,
+        batteryMaxVin: Float? = nil,
+        batteryCutStart: Float? = nil,
+        batteryCutEnd: Float? = nil
     ) -> [UInt8]? {
         guard payload.count >= 33, payload[0] == VESCCommand.getMCConf.rawValue else { return nil }
         var p = payload
@@ -388,6 +396,14 @@ enum VESCProtocolParser {
         let kp      = Float(l_H * bw)
         let ki      = Float(r_Ω * bw)
         let obsgain = Float(1e3 / (lambda_Wb * lambda_Wb))
+
+        // Battery voltage cutoffs (offsets verified against firmware 6.05)
+        if p.count >= 70 {
+            if let v = batteryMinVin   { setFloat32BE(&p, 53, v) }
+            if let v = batteryMaxVin   { setFloat32BE(&p, 57, v) }
+            if let v = batteryCutStart { setFloat32BE(&p, 61, v) }
+            if let v = batteryCutEnd   { setFloat32BE(&p, 65, v) }
+        }
 
         if p.count >= 175 {
             setFloat32BE(&p, 124, kp)

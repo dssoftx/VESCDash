@@ -71,6 +71,7 @@ final class TelemetryViewModel: ObservableObject {
     // MARK: Settings
     @Published var settings = DrivetrainSettings()
     @Published var uiSettings = UISettings()
+    @Published var batteryConfig = BatteryConfig()
     @Published var motorLimits = MotorLimitsConfig()
     @Published var motorProfile = MotorProfile()
     @Published var savedProfiles: [MotorProfile] = []
@@ -368,7 +369,11 @@ final class TelemetryViewModel: ObservableObject {
             r_Ω: r_Ω, l_µH: l_µH, ldLqDiff_µH: ldLqDiff_µH, lambda_Wb: lambda_Wb, tc_µs: tc_µs,
             siMotorPoles: siMotorPoles,
             siGearRatio: siGearRatio,
-            siWheelDiameterM: siWheelDiameterMM / 1000.0
+            siWheelDiameterM: siWheelDiameterMM / 1000.0,
+            batteryMinVin:   batteryConfig.minVin,
+            batteryMaxVin:   batteryConfig.maxVin,
+            batteryCutStart: batteryConfig.cutStartV,
+            batteryCutEnd:   batteryConfig.cutEndV
         ) else { motorLimitsSendState = .failed("Payload build failed"); return }
 
         sendCommand(writePayload)
@@ -477,6 +482,10 @@ final class TelemetryViewModel: ObservableObject {
 
     func saveUISettings() {
         if let d = try? JSONEncoder().encode(uiSettings)   { UserDefaults.standard.set(d, forKey: "uiSettings") }
+    }
+
+    func saveBatteryConfig() {
+        if let d = try? JSONEncoder().encode(batteryConfig) { UserDefaults.standard.set(d, forKey: "batteryConfig") }
     }
 
     func saveMotorLimits() {
@@ -766,6 +775,8 @@ final class TelemetryViewModel: ObservableObject {
            let profiles = try? JSONDecoder().decode([MotorProfile].self, from: d) { savedProfiles = profiles }
         if let d = UserDefaults.standard.data(forKey: "uiSettings"),
            let ui = try? JSONDecoder().decode(UISettings.self, from: d) { uiSettings = ui }
+        if let d = UserDefaults.standard.data(forKey: "batteryConfig"),
+           let b = try? JSONDecoder().decode(BatteryConfig.self, from: d) { batteryConfig = b }
     }
 
     private func saveCANIDs() {

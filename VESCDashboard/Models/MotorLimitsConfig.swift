@@ -1,5 +1,57 @@
 import Foundation
 
+// MARK: - Battery Configuration
+
+enum BatteryChem: String, CaseIterable, Codable {
+    case liPo    = "LiPo"
+    case liIon   = "Li-Ion"
+    case liFePO4 = "LiFePO₄"
+
+    var maxCellV: Float {
+        switch self {
+        case .liPo, .liIon: return 4.20
+        case .liFePO4:      return 3.65
+        }
+    }
+    var cutStartCellV: Float {
+        switch self {
+        case .liPo:   return 3.50
+        case .liIon:  return 3.30
+        case .liFePO4: return 3.00
+        }
+    }
+    var cutEndCellV: Float {
+        switch self {
+        case .liPo:   return 3.20
+        case .liIon:  return 3.00
+        case .liFePO4: return 2.80
+        }
+    }
+    var hint: String {
+        switch self {
+        case .liPo:   return "4.20 / 3.50 / 3.20 V per cell — high power density, common in RC."
+        case .liIon:  return "4.20 / 3.30 / 3.00 V per cell — 18650/21700, good cycle life."
+        case .liFePO4: return "3.65 / 3.00 / 2.80 V per cell — very safe, long life, lower energy."
+        }
+    }
+}
+
+struct BatteryConfig: Codable {
+    var chemistry:  BatteryChem = .liIon
+    var cellSeries: Int   = 10
+    var capacityAh: Float = 5.0
+    var maxCRating: Float = 30.0
+
+    var maxVoltage:  Float { Float(cellSeries) * chemistry.maxCellV }
+    var cutStartV:   Float { Float(cellSeries) * chemistry.cutStartCellV }
+    var cutEndV:     Float { Float(cellSeries) * chemistry.cutEndCellV }
+    var minVin:      Float { 8.0 }          // fixed hardware floor
+    var maxVin:      Float { maxVoltage + 2.0 }  // headroom above full charge
+    var maxCurrentA: Float { capacityAh * maxCRating }
+}
+
+// MARK: - Motor Limits
+
 struct MotorLimitsConfig: Codable, Equatable {
     // Current limits
     var phaseCurrentMax: Float = 60.0

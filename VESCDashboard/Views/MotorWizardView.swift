@@ -3,26 +3,61 @@ import SwiftUI
 // MARK: - Motor Type
 
 enum MotorType: String, CaseIterable {
-    case inrunner  = "Inrunner"
-    case outrunner = "Outrunner"
-    case hub       = "Hub Motor"
-    case ebikeDD   = "Ebike Direct Drive"
+    case outrunnerSmall  = "Small Outrunner"
+    case outrunnerMedium = "Medium Outrunner"
+    case outrunnerLarge  = "Large Outrunner"
+    case inrunner        = "Inrunner"
+    case hub             = "Hub Motor"
+    case ebikeDD         = "Ebike Direct Drive"
 
     var icon: String {
         switch self {
-        case .inrunner:  return "circle.circle"
-        case .outrunner: return "circle.circle.fill"
-        case .hub:       return "bicycle"
-        case .ebikeDD:   return "bolt.fill"
+        case .outrunnerSmall:  return "smallcircle.filled.circle"
+        case .outrunnerMedium: return "circle.circle.fill"
+        case .outrunnerLarge:  return "circle.circle"
+        case .inrunner:        return "cylinder"
+        case .hub:             return "bicycle.circle.fill"
+        case .ebikeDD:         return "bicycle"
         }
     }
 
     var hint: String {
         switch self {
-        case .inrunner:  return "Shaft spins inside the stator. Typical for drones, RC cars."
-        case .outrunner: return "Bell/rotor spins around the outside. Common for eskate, EUC."
-        case .hub:       return "Motor integrated into wheel hub. Direct drive."
-        case .ebikeDD:   return "Mid-drive or geared ebike motor with chain/belt drivetrain."
+        case .outrunnerSmall:  return "~40–55 mm diameter. FPV wings, small esk8. Typically 14 poles."
+        case .outrunnerMedium: return "~63–74 mm diameter. Standard eskate, EUC, efoil. Typically 14 poles."
+        case .outrunnerLarge:  return "~80–100 mm diameter. High-power builds, large esk8. Typically 10 poles."
+        case .inrunner:        return "Rotor shaft spins inside stator. RC cars, CNC spindles. Typically 4–6 poles."
+        case .hub:             return "Motor integrated into wheel hub. Direct drive — no separate wheel needed."
+        case .ebikeDD:         return "Mid-drive or geared hub motor with chain/belt drivetrain. High pole count."
+        }
+    }
+
+    var defaultPoles: Int {
+        switch self {
+        case .outrunnerSmall:  return 14
+        case .outrunnerMedium: return 14
+        case .outrunnerLarge:  return 10
+        case .inrunner:        return 4
+        case .hub:             return 30
+        case .ebikeDD:         return 46
+        }
+    }
+
+    var defaultGearRatio: Float {
+        switch self {
+        case .hub, .ebikeDD:   return 0      // direct drive / built-in gearing
+        default:               return 2.5    // typical belt drive
+        }
+    }
+
+    var defaultWheelMM: Float {
+        switch self {
+        case .outrunnerSmall:  return 90
+        case .outrunnerMedium: return 97
+        case .outrunnerLarge:  return 150
+        case .inrunner:        return 83
+        case .hub:             return 97
+        case .ebikeDD:         return 700
         }
     }
 }
@@ -31,7 +66,16 @@ enum MotorType: String, CaseIterable {
 
 private enum WizardStep: Int, CaseIterable {
     case motorInfo = 0
-    case detection = 1
+    case battery   = 1
+    case detection = 2
+
+    var label: String {
+        switch self {
+        case .motorInfo: return "Motor"
+        case .battery:   return "Battery"
+        case .detection: return "Detection"
+        }
+    }
 }
 
 // MARK: - MotorWizardView
@@ -43,31 +87,44 @@ struct MotorWizardView: View {
     @State private var step: WizardStep = .motorInfo
 
     // Step 1 — Motor & Drivetrain
-    @State private var motorType: MotorType = .outrunner
-    @State private var totalPoles: String = "14"          // total poles (not pairs)
-    @State private var gearRatio: String = "0"            // 0 = direct drive
-    @State private var wheelDiameterMM: String = "83"
+    @State private var motorType: MotorType = .outrunnerMedium
+    @State private var totalPoles: String = "14"
+    @State private var gearRatio: String = "2.5"
+    @State private var wheelDiameterMM: String = "97"
     @State private var detectionCurrent: String = ""
 
-    // Step 2 — Detection
+    // Step 2 — Battery
+    @State private var batteryChem: BatteryChem = .liIon
+    @State private var cellSeries: Int = 10
+    @State private var capacityAhText: String = "5.0"
+    @State private var maxCRatingText: String = "30"
+
+    // Step 3 — Detection
     @State private var showSpinWarning = false
-    @State private var tc_µs: String = "1000"             // current controller time constant
+    @State private var tc_µs: String = "1000"
 
     // Computed
     private var polesInt: Int { Int(totalPoles) ?? 14 }
     private var gearRatioF: Float { Float(gearRatio) ?? 0 }
-    private var wheelF: Float { Float(wheelDiameterMM) ?? 83 }
+    private var wheelF: Float { Float(wheelDiameterMM) ?? 97 }
     private var detCurrent: Float { Float(detectionCurrent) ?? max(1, vm.motorLimits.phaseCurrentMax / 3) }
     private var tcF: Float { Float(tc_µs) ?? 1000 }
+
+    private var capacityAh: Float { Float(capacityAhText) ?? 5.0 }
+    private var maxCRating: Float { Float(maxCRatingText) ?? 30 }
+    private var packMaxV: Float { Float(cellSeries) * batteryChem.maxCellV }
+    private var packCutStart: Float { Float(cellSeries) * batteryChem.cutStartCellV }
+    private var packCutEnd: Float { Float(cellSeries) * batteryChem.cutEndCellV }
+    private var maxBattA: Float { capacityAh * maxCRating }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 stepIndicator
                 Divider()
-
                 switch step {
                 case .motorInfo: motorInfoStep
+                case .battery:   batteryStep
                 case .detection: detectionStep
                 }
             }
@@ -79,15 +136,19 @@ struct MotorWizardView: View {
                 }
             }
             .onAppear {
-                // Default detection current to 1/3 of phase max
                 if detectionCurrent.isEmpty {
                     let def = max(1, vm.motorLimits.phaseCurrentMax / 3)
                     detectionCurrent = String(format: "%.0f", def)
                 }
+                // Load persisted battery config
+                batteryChem      = vm.batteryConfig.chemistry
+                cellSeries       = vm.batteryConfig.cellSeries
+                capacityAhText   = fmtF(vm.batteryConfig.capacityAh)
+                maxCRatingText   = fmtF(vm.batteryConfig.maxCRating)
                 // Auto-populate drivetrain from MCCONF if cached
                 if let dt = vm.drivetrainFromMCCONF() {
-                    totalPoles = "\(dt.poles)"
-                    gearRatio  = fmtF(dt.gearRatio)
+                    totalPoles      = "\(dt.poles)"
+                    gearRatio       = fmtF(dt.gearRatio)
                     wheelDiameterMM = fmtF(dt.wheelDiameterMM)
                 }
             }
@@ -110,7 +171,7 @@ struct MotorWizardView: View {
                                 .font(.caption.weight(.bold))
                                 .foregroundStyle(active ? .black : .secondary)
                         )
-                    Text(s == .motorInfo ? "Motor Info" : "Detection")
+                    Text(s.label)
                         .font(.caption2)
                         .foregroundStyle(active ? .cyan : .secondary)
                 }
@@ -128,7 +189,12 @@ struct MotorWizardView: View {
             Section {
                 ForEach(MotorType.allCases, id: \.self) { mt in
                     Button {
-                        motorType = mt
+                        if motorType != mt {
+                            motorType = mt
+                            totalPoles      = "\(mt.defaultPoles)"
+                            gearRatio       = fmtF(mt.defaultGearRatio)
+                            wheelDiameterMM = fmtF(mt.defaultWheelMM)
+                        }
                     } label: {
                         HStack {
                             Label(mt.rawValue, systemImage: mt.icon)
@@ -153,13 +219,13 @@ struct MotorWizardView: View {
                         .multilineTextAlignment(.trailing)
                 }
                 if let p = Int(totalPoles), p > 0 {
-                    Text("\(p) poles = \(p/2) pole pairs")
+                    Text("\(p) poles = \(p / 2) pole pairs")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             } header: {
                 Text("Motor Poles")
             } footer: {
-                Text("Total number of motor poles — always even. Count the magnets on the rotor, or use poles = pole_pairs × 2.")
+                Text("Total pole count — always even. Count the magnets on the rotor, or check the motor datasheet.")
                     .font(.caption)
             }
 
@@ -171,7 +237,7 @@ struct MotorWizardView: View {
                 }
                 LabeledContent("Wheel Diameter") {
                     HStack(spacing: 4) {
-                        TextField("83", text: $wheelDiameterMM)
+                        TextField("97", text: $wheelDiameterMM)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                         Text("mm").foregroundStyle(.secondary).font(.subheadline)
@@ -180,8 +246,8 @@ struct MotorWizardView: View {
                 if vm.hasMCConfCache {
                     Button {
                         if let dt = vm.drivetrainFromMCCONF() {
-                            totalPoles = "\(dt.poles)"
-                            gearRatio  = fmtF(dt.gearRatio)
+                            totalPoles      = "\(dt.poles)"
+                            gearRatio       = fmtF(dt.gearRatio)
                             wheelDiameterMM = fmtF(dt.wheelDiameterMM)
                         }
                     } label: {
@@ -191,17 +257,17 @@ struct MotorWizardView: View {
             } header: {
                 Text("Drivetrain")
             } footer: {
-                Text("Gear ratio 0 = direct drive / hub motor. Wheel diameter sets the speed calculation.")
+                Text("Gear ratio 0 = direct drive / hub motor (treated as 1:1). Selecting a motor type above sets sensible defaults.")
                     .font(.caption)
             }
 
             Section {
                 Button {
-                    withAnimation { step = .detection }
+                    withAnimation { step = .battery }
                 } label: {
                     HStack {
                         Spacer()
-                        Text("Next: FOC Detection")
+                        Text("Next: Battery Setup")
                             .fontWeight(.semibold)
                         Image(systemName: "chevron.right")
                         Spacer()
@@ -212,13 +278,101 @@ struct MotorWizardView: View {
         }
     }
 
-    // MARK: - Step 2: Detection
+    // MARK: - Step 2: Battery
+
+    private var batteryStep: some View {
+        Form {
+            Section {
+                ForEach(BatteryChem.allCases, id: \.self) { chem in
+                    Button {
+                        batteryChem = chem
+                    } label: {
+                        HStack {
+                            Text(chem.rawValue)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if batteryChem == chem {
+                                Image(systemName: "checkmark").foregroundStyle(.cyan)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("Cell Chemistry")
+            } footer: {
+                Text(batteryChem.hint).font(.caption)
+            }
+
+            Section {
+                Stepper("Cells in Series: \(cellSeries)S", value: $cellSeries, in: 2...24)
+                LabeledContent("Capacity") {
+                    HStack(spacing: 4) {
+                        TextField("5.0", text: $capacityAhText)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                        Text("Ah").foregroundStyle(.secondary).font(.subheadline)
+                    }
+                }
+                LabeledContent("Max Continuous Discharge") {
+                    HStack(spacing: 4) {
+                        TextField("30", text: $maxCRatingText)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                        Text("C").foregroundStyle(.secondary).font(.subheadline)
+                    }
+                }
+            } header: {
+                Text("Pack Configuration")
+            } footer: {
+                Text("C rating on the battery label. Max battery current = C × Ah.")
+                    .font(.caption)
+            }
+
+            Section {
+                calcRow("Full Charge Voltage", String(format: "%.1f V", packMaxV))
+                calcRow("Cut-Start Voltage",   String(format: "%.1f V", packCutStart),
+                        sub: "Reduce output below this")
+                calcRow("Cut-End Voltage",     String(format: "%.1f V", packCutEnd),
+                        sub: "Stop output below this")
+                calcRow("Max Battery Current", String(format: "%.0f A", maxBattA),
+                        sub: "Suggested l_in_current_max")
+            } header: {
+                Text("Calculated Values")
+            } footer: {
+                Text("These voltage cutoffs and the current suggestion are written to VESC on Apply in step 3.")
+                    .font(.caption)
+            }
+
+            Section {
+                Button {
+                    saveBatteryToVM()
+                    withAnimation { step = .detection }
+                } label: {
+                    HStack {
+                        Spacer()
+                        Text("Next: FOC Detection")
+                            .fontWeight(.semibold)
+                        Image(systemName: "chevron.right")
+                        Spacer()
+                    }
+                }
+                Button {
+                    withAnimation { step = .motorInfo }
+                } label: {
+                    Label("Back", systemImage: "chevron.left")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    // MARK: - Step 3: Detection
 
     private var detectionStep: some View {
         Form {
             Section {
                 ampField("Detection Current", placeholder: "10", text: $detectionCurrent,
-                         hint: "Recommended: motor phase max ÷ 3  (currently ~\(Int(vm.motorLimits.phaseCurrentMax/3)) A)")
+                         hint: "Recommended: motor phase max ÷ 3  (currently ~\(Int(vm.motorLimits.phaseCurrentMax / 3)) A)")
                 LabeledContent("Time Constant") {
                     HStack(spacing: 4) {
                         TextField("1000", text: $tc_µs)
@@ -234,7 +388,6 @@ struct MotorWizardView: View {
                     .font(.caption)
             }
 
-            // RL Measurement
             Section {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
@@ -253,11 +406,9 @@ struct MotorWizardView: View {
                     .buttonStyle(.bordered)
                     .disabled(!vm.isConnected || isDetecting)
                 }
-
                 rlResultRow
             }
 
-            // Flux Linkage Measurement
             Section {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
@@ -283,7 +434,6 @@ struct MotorWizardView: View {
                         Text("The motor will spin up during flux linkage measurement. Make sure nothing is in the way of the motor or drivetrain before proceeding.")
                     }
                 }
-
                 lambdaResultRow
             }
 
@@ -291,7 +441,7 @@ struct MotorWizardView: View {
 
             Section {
                 Button {
-                    withAnimation { step = .motorInfo }
+                    withAnimation { step = .battery }
                 } label: {
                     Label("Back", systemImage: "chevron.left")
                         .foregroundStyle(.secondary)
@@ -300,7 +450,7 @@ struct MotorWizardView: View {
         }
     }
 
-    // MARK: - Sub-views
+    // MARK: - Detection result sub-views
 
     @ViewBuilder
     private var detectionResultSections: some View {
@@ -325,6 +475,7 @@ struct MotorWizardView: View {
             Section {
                 sendStateRow
                 Button {
+                    saveBatteryToVM()
                     vm.applyFOCDetection(
                         r_Ω: r, l_µH: l, ldLqDiff_µH: ldLq, lambda_Wb: lambda, tc_µs: tcF,
                         siMotorPoles: polesInt, siGearRatio: gearRatioF, siWheelDiameterMM: wheelF
@@ -345,7 +496,8 @@ struct MotorWizardView: View {
                           systemImage: "exclamationmark.triangle")
                         .font(.caption).foregroundStyle(.orange)
                 } else {
-                    Label("Saves R, L, λ, KP, KI, observer gain, poles, gear ratio, and wheel diameter to VESC flash.",
+                    let bat = vm.batteryConfig
+                    Label("Saves R, L, λ, KP, KI, observer gain, poles, gear ratio, wheel diameter, and battery cutoffs (\(String(format: "%.1f", bat.cutEndV))–\(String(format: "%.1f", bat.cutStartV)) V) to VESC flash.",
                           systemImage: "flame")
                         .font(.caption).foregroundStyle(.orange)
                 }
@@ -407,6 +559,65 @@ struct MotorWizardView: View {
         }
     }
 
+    // MARK: - Helpers
+
+    private var isDetecting: Bool {
+        switch vm.detectionState {
+        case .measuringRL, .measuringLinkage: return true
+        default: return false
+        }
+    }
+
+    private var rlDone: Bool {
+        switch vm.detectionState {
+        case .rlResult, .measuringLinkage, .complete: return true
+        default: return false
+        }
+    }
+
+    private func saveBatteryToVM() {
+        vm.batteryConfig.chemistry  = batteryChem
+        vm.batteryConfig.cellSeries = cellSeries
+        vm.batteryConfig.capacityAh = Float(capacityAhText) ?? 5.0
+        vm.batteryConfig.maxCRating = Float(maxCRatingText) ?? 30
+        vm.saveBatteryConfig()
+    }
+
+    private func fmtF(_ v: Float) -> String {
+        v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : String(format: "%.3g", v)
+    }
+
+    private func fmtF(_ v: Double) -> String {
+        v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : String(format: "%.3g", v)
+    }
+
+    private func extractRL(_ state: WizardDetectionState) -> (r: Float, l: Float, ldLq: Float)? {
+        switch state {
+        case .rlResult(let r, let l, let ldLq):        return (r, l, ldLq)
+        case .measuringLinkage(let r, let l, let ldLq): return (r, l, ldLq)
+        case .complete(let r, let l, let ldLq, _):     return (r, l, ldLq)
+        default: return nil
+        }
+    }
+
+    // MARK: - Field Builders
+
+    @ViewBuilder
+    private func calcRow(_ label: String, _ value: String, sub: String? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(label).foregroundStyle(.secondary)
+                Spacer()
+                Text(value).fontWeight(.medium)
+            }
+            if let sub {
+                Text(sub).font(.caption2).foregroundStyle(.tertiary)
+            }
+        }
+        .font(.subheadline)
+        .padding(.vertical, 1)
+    }
+
     @ViewBuilder
     private func resultRow(_ label: String, value: String) -> some View {
         HStack {
@@ -432,35 +643,6 @@ struct MotorWizardView: View {
             Text(hint).font(.caption2).foregroundStyle(.tertiary)
         }
         .padding(.vertical, 2)
-    }
-
-    // MARK: - Helpers
-
-    private var isDetecting: Bool {
-        switch vm.detectionState {
-        case .measuringRL, .measuringLinkage: return true
-        default: return false
-        }
-    }
-
-    private var rlDone: Bool {
-        switch vm.detectionState {
-        case .rlResult, .measuringLinkage, .complete: return true
-        default: return false
-        }
-    }
-
-    private func fmtF(_ v: Float) -> String {
-        v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : String(format: "%.3g", v)
-    }
-
-    private func extractRL(_ state: WizardDetectionState) -> (r: Float, l: Float, ldLq: Float)? {
-        switch state {
-        case .rlResult(let r, let l, let ldLq):        return (r, l, ldLq)
-        case .measuringLinkage(let r, let l, let ldLq): return (r, l, ldLq)
-        case .complete(let r, let l, let ldLq, _):     return (r, l, ldLq)
-        default: return nil
-        }
     }
 }
 
