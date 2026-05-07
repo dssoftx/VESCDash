@@ -2,9 +2,15 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var vm = TelemetryViewModel()
+    @AppStorage("onboardingComplete") private var onboardingComplete = false
 
     var body: some View {
-        DashboardView(vm: vm)
+        if onboardingComplete {
+            DashboardView(vm: vm)
+        } else {
+            OnboardingView()
+                .transition(.opacity)
+        }
     }
 }
 
