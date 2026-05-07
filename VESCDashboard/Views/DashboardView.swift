@@ -73,7 +73,7 @@ struct DashboardView: View {
                 MotorWizardView(vm: vm)
             }
             .sheet(isPresented: $showMotorProfile) {
-                MotorProfileView(vm: vm)
+                MotorProfileListView(vm: vm)
             }
         }
         .preferredColorScheme(.dark)

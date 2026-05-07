@@ -1,16 +1,20 @@
 import SwiftUI
 
-struct MotorProfileView: View {
+struct MotorProfileEditView: View {
     @ObservedObject var vm: TelemetryViewModel
     @Environment(\.dismiss) private var dismiss
 
+    let existingProfile: MotorProfile?
+
+    @State private var profileName: String = ""
     @State private var maxKMH: String = ""
-    @State private var minKMH: String = ""      // positive value; stored as negative ERPM
+    @State private var minKMH: String = ""
     @State private var wattMax: String = ""
     @State private var wattMin: String = ""
     @State private var accelPct: String = ""
     @State private var brakePct: String = ""
-    @State private var storeToFlash: Bool = true
+
+    private var isEditing: Bool { existingProfile != nil }
 
     private var drivetrain: (polePairs: Float, ratio: Float, wheelMM: Float)? {
         if let dt = vm.drivetrainFromMCCONF(), dt.poles >= 2, dt.wheelDiameterMM > 0 {
@@ -26,48 +30,56 @@ struct MotorProfileView: View {
     private var hasDrivetrain: Bool { drivetrain != nil }
 
     private var allValid: Bool {
-        guard let ap = Float(accelPct), ap >= 0, ap <= 100,
+        guard !profileName.trimmingCharacters(in: .whitespaces).isEmpty,
+              let ap = Float(accelPct), ap >= 0, ap <= 100,
               let bp = Float(brakePct), bp >= 0, bp <= 100,
-              Float(maxKMH).map({ $0 >= 0 }) == true,
-              Float(minKMH).map({ $0 >= 0 }) == true,
-              hasDrivetrain,
               Float(wattMax).map({ $0 >= 0 }) == true,
               Float(wattMin).map({ $0 <= 0 }) == true
         else { return false }
+        if hasDrivetrain {
+            guard Float(maxKMH).map({ $0 >= 0 }) == true,
+                  Float(minKMH).map({ $0 >= 0 }) == true
+            else { return false }
+        }
         return true
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                nameSection
                 readSection
-                storageSection
                 speedSection
                 powerSection
                 scaleSection
-                actionSection
+                saveSection
             }
-            .navigationTitle(vm.activeVESCLabel.isEmpty ? "Motor Profile" : "Profile · \(vm.activeVESCLabel)")
+            .navigationTitle(isEditing ? "Edit Profile" : "New Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
             }
-            .onAppear {
-                loadCurrentValues()
-                if vm.isConnected && vm.motorLimitsReadState != .reading {
-                    vm.fetchMotorConfig()
-                }
-            }
+            .onAppear { loadValues() }
             .onChange(of: vm.motorLimitsReadState) { state in
-                if case .loaded = state { loadCurrentValues() }
+                if case .loaded = state { loadValues() }
             }
         }
         .preferredColorScheme(.dark)
     }
 
-    // MARK: - Read Section
+    // MARK: - Name
+
+    private var nameSection: some View {
+        Section {
+            TextField("Profile Name", text: $profileName)
+        } header: {
+            Text("Name")
+        }
+    }
+
+    // MARK: - Read from VESC
 
     private var readSection: some View {
         Section {
@@ -98,31 +110,8 @@ struct MotorProfileView: View {
         } header: {
             Text(vm.activeVESCLabel.isEmpty ? "VESC" : vm.activeVESCLabel)
         } footer: {
-            Text(vm.hasMCConfCache
-                 ? "Full config cached — profile write will use COMM_SET_MCCONF."
-                 : "Read config first to enable profile write.")
+            Text("Populates fields with current VESC limits.")
                 .font(.caption)
-        }
-    }
-
-    // MARK: - Storage Mode
-
-    private var storageSection: some View {
-        Section {
-            Toggle(isOn: $storeToFlash) {
-                Label("Save to Flash", systemImage: storeToFlash ? "flame.fill" : "memorychip")
-            }
-            .tint(.orange)
-        } header: {
-            Text("Storage Mode")
-        } footer: {
-            if storeToFlash {
-                Text("Flash: all limits saved permanently. Requires reading MCCONF first.")
-                    .font(.caption)
-            } else {
-                Text("RAM: all limits applied until reboot. No MCCONF read required.")
-                    .font(.caption)
-            }
         }
     }
 
@@ -136,14 +125,14 @@ struct MotorProfileView: View {
                 kmhField("Max Reverse Speed", placeholder: "20", text: $minKMH,
                          hint: erpmAnnotation(minKMH, negative: true))
             } else {
-                Label("Configure drivetrain first (Motor Wizard → Motor Info or Settings → Drivetrain) to set speed limits in km/h.",
+                Label("Configure drivetrain first (Motor Wizard or Settings) to enter speed in km/h.",
                       systemImage: "exclamationmark.triangle")
                     .font(.caption).foregroundStyle(.orange)
             }
         } header: {
             Text("Speed Limits")
         } footer: {
-            Text("Enter both as positive km/h values. Set very high (e.g. 999) to disable the limit.")
+            Text("Positive values. Set very high (e.g. 999) to disable.")
                 .font(.caption)
         }
     }
@@ -155,7 +144,7 @@ struct MotorProfileView: View {
             wattField("Max Power", placeholder: "3000", text: $wattMax,
                       hint: "Peak discharge power. Set very high (e.g. 1500000) to disable.")
             wattField("Max Regen", placeholder: "-1500", text: $wattMin,
-                      hint: "Peak regenerative braking power (negative). Set very negative to disable.")
+                      hint: "Peak regen power (negative). Set very negative to disable.")
             if let wr = Float(wattMin), wr > 0 {
                 Label("Regen must be negative", systemImage: "exclamationmark.triangle")
                     .font(.caption).foregroundStyle(.orange)
@@ -170,51 +159,33 @@ struct MotorProfileView: View {
     private var scaleSection: some View {
         Section {
             pctField("Acceleration", placeholder: "100", text: $accelPct,
-                     hint: "l_current_max_scale — fraction of peak motor current for acceleration")
+                     hint: "l_current_max_scale — fraction of peak motor current")
             pctField("Braking", placeholder: "100", text: $brakePct,
-                     hint: "l_current_min_scale — fraction of peak motor current for braking")
+                     hint: "l_current_min_scale — fraction of peak motor current")
         } header: {
             Text("Current Scale")
         } footer: {
-            Text("100% = full rated current. Soft-limits power delivery without changing the hard current limits.")
+            Text("100% = full rated current.")
                 .font(.caption)
         }
     }
 
-    // MARK: - Apply
+    // MARK: - Save
 
-    private var actionSection: some View {
+    private var saveSection: some View {
         Section {
-            Button { applyAndSend() } label: {
+            Button {
+                saveProfile()
+            } label: {
                 HStack {
                     Spacer()
-                    switch vm.motorLimitsSendState {
-                    case .idle:
-                        Label(vm.isConnected ? "Apply Profile" : "Connect First",
-                              systemImage: "bolt.fill").fontWeight(.semibold)
-                    case .sent(let msg):
-                        Label(msg, systemImage: "checkmark.circle.fill").foregroundStyle(.green)
-                    case .failed(let msg):
-                        Label(msg, systemImage: "xmark.circle.fill").foregroundStyle(.red)
-                    }
+                    Label(isEditing ? "Save Changes" : "Save Profile",
+                          systemImage: "checkmark.circle.fill")
+                        .fontWeight(.semibold)
                     Spacer()
                 }
             }
-            .disabled(!vm.isConnected || !allValid || (storeToFlash && !vm.hasMCConfCache))
-        } header: {
-            Text("Apply")
-        } footer: {
-            if storeToFlash && !vm.hasMCConfCache {
-                Label("Read motor config first to enable flash write.",
-                      systemImage: "exclamationmark.triangle")
-                    .font(.caption).foregroundStyle(.orange)
-            } else if storeToFlash {
-                Label("Writes permanently to VESC flash. Forwards to all VESCs on CAN.", systemImage: "flame")
-                    .font(.caption).foregroundStyle(.orange)
-            } else {
-                Label("RAM only — all limits applied until reboot. Forwards to all VESCs on CAN automatically.", systemImage: "memorychip")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
+            .disabled(!allValid)
         }
     }
 
@@ -227,7 +198,7 @@ struct MotorProfileView: View {
     }
 
     private func erpmToKMH(_ erpm: Float) -> Float {
-        guard let dt = drivetrain else { return erpm }
+        guard let dt = drivetrain else { return abs(erpm) }
         let circumM = Float.pi * dt.wheelMM / 1000.0
         return abs(erpm) / dt.polePairs / dt.ratio / 60.0 * circumM * 3.6
     }
@@ -235,47 +206,52 @@ struct MotorProfileView: View {
     private func erpmAnnotation(_ kmhText: String, negative: Bool) -> String {
         guard let kmh = Float(kmhText), kmh > 0 else { return "" }
         let erpm = kmhToERPM(kmh)
-        let sign = negative ? "-" : ""
-        return "≈ \(sign)\(String(format: "%.0f", erpm)) ERPM"
+        return "≈ \(negative ? "-" : "")\(String(format: "%.0f", erpm)) ERPM"
     }
 
-    // MARK: - Data Binding
+    // MARK: - Data
 
-    private func loadCurrentValues() {
-        let p = vm.motorProfile
-        maxKMH   = fmtKMH(erpmToKMH(p.maxERPM))
-        minKMH   = fmtKMH(erpmToKMH(p.minERPM))   // minERPM is negative; erpmToKMH takes abs
-        wattMax  = fmt(p.wattMax)
-        wattMin  = fmt(p.wattMin)
-        accelPct = fmt(p.currentMaxScale * 100)
-        brakePct = fmt(p.currentMinScale * 100)
+    private func loadValues() {
+        let p = existingProfile ?? vm.motorProfile
+        profileName = existingProfile?.name ?? ""
+        maxKMH      = fmtKMH(erpmToKMH(p.maxERPM))
+        minKMH      = fmtKMH(erpmToKMH(p.minERPM))
+        wattMax     = fmt(p.wattMax)
+        wattMin     = fmt(p.wattMin)
+        accelPct    = fmt(p.currentMaxScale * 100)
+        brakePct    = fmt(p.currentMinScale * 100)
     }
 
-    private func applyAndSend() {
-        guard let fmax = Float(maxKMH), fmax >= 0,
-              let fmin = Float(minKMH), fmin >= 0,
-              let wm   = Float(wattMax), wm >= 0,
-              let wr   = Float(wattMin), wr <= 0,
-              let ap   = Float(accelPct), ap >= 0, ap <= 100,
-              let bp   = Float(brakePct), bp >= 0, bp <= 100
+    private func saveProfile() {
+        guard let wm = Float(wattMax), wm >= 0,
+              let wr = Float(wattMin), wr <= 0,
+              let ap = Float(accelPct), ap >= 0, ap <= 100,
+              let bp = Float(brakePct), bp >= 0, bp <= 100
         else { return }
 
-        vm.applyProfile(MotorProfile(
-            maxERPM:  kmhToERPM(fmax),
-            minERPM: -kmhToERPM(fmin),
-            wattMax: wm, wattMin: wr,
-            currentMaxScale: ap / 100,
-            currentMinScale: bp / 100
-        ), storeToFlash: storeToFlash)
+        var profile = existingProfile ?? MotorProfile()
+        profile.name = profileName.trimmingCharacters(in: .whitespaces)
+        profile.wattMax = wm
+        profile.wattMin = wr
+        profile.currentMaxScale = ap / 100
+        profile.currentMinScale = bp / 100
+
+        if hasDrivetrain,
+           let fmax = Float(maxKMH), fmax >= 0,
+           let fmin = Float(minKMH), fmin >= 0 {
+            profile.maxERPM =  kmhToERPM(fmax)
+            profile.minERPM = -kmhToERPM(fmin)
+        }
+
+        if isEditing { vm.updateProfile(profile) } else { vm.addProfile(profile) }
+        dismiss()
     }
 
     private func fmt(_ f: Float) -> String {
         f.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(f)) : String(format: "%.2f", f)
     }
 
-    private func fmtKMH(_ f: Float) -> String {
-        String(format: "%.1f", f)
-    }
+    private func fmtKMH(_ f: Float) -> String { String(format: "%.1f", f) }
 
     // MARK: - Field Builders
 
@@ -334,5 +310,5 @@ struct MotorProfileView: View {
 }
 
 #Preview {
-    MotorProfileView(vm: TelemetryViewModel())
+    MotorProfileEditView(vm: TelemetryViewModel(), existingProfile: nil)
 }

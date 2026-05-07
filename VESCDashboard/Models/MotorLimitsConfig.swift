@@ -17,7 +17,9 @@ struct MotorLimitsConfig: Codable, Equatable {
 
 // MARK: - Motor Profile (runtime speed / power / current-scale limits)
 
-struct MotorProfile: Codable, Equatable {
+struct MotorProfile: Codable, Equatable, Identifiable {
+    var id: UUID = UUID()
+    var name: String = "New Profile"
     var maxERPM: Float = 100_000        // l_max_erpm  — forward speed limit (positive)
     var minERPM: Float = -100_000       // l_min_erpm  — reverse speed limit (negative)
     var wattMax: Float = 1_500_000      // l_watt_max  — max discharge power (W); very high = disabled

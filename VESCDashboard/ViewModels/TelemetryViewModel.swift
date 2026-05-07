@@ -67,6 +67,7 @@ final class TelemetryViewModel: ObservableObject {
     @Published var settings = DrivetrainSettings()
     @Published var motorLimits = MotorLimitsConfig()
     @Published var motorProfile = MotorProfile()
+    @Published var savedProfiles: [MotorProfile] = []
 
     // MARK: Motor config send/read states
     @Published var motorLimitsSendState: MotorLimitsSendState = .idle
@@ -500,6 +501,29 @@ final class TelemetryViewModel: ObservableObject {
         if let d = try? JSONEncoder().encode(motorLimits)  { UserDefaults.standard.set(d, forKey: "motorLimitsConfig") }
     }
 
+    // MARK: - Saved Profiles
+
+    func addProfile(_ profile: MotorProfile) {
+        savedProfiles.append(profile)
+        saveSavedProfiles()
+    }
+
+    func updateProfile(_ profile: MotorProfile) {
+        if let idx = savedProfiles.firstIndex(where: { $0.id == profile.id }) {
+            savedProfiles[idx] = profile
+            saveSavedProfiles()
+        }
+    }
+
+    func removeProfile(id: UUID) {
+        savedProfiles.removeAll { $0.id == id }
+        saveSavedProfiles()
+    }
+
+    private func saveSavedProfiles() {
+        if let d = try? JSONEncoder().encode(savedProfiles) { UserDefaults.standard.set(d, forKey: "savedMotorProfiles") }
+    }
+
     func resetPeakStats() {
         peakSpeedKMH = 0
         peakPowerW = 0
@@ -749,6 +773,8 @@ final class TelemetryViewModel: ObservableObject {
             persistedCANIDs = ids
             canNodes = ids.map { CANNode(id: $0) }
         }
+        if let d = UserDefaults.standard.data(forKey: "savedMotorProfiles"),
+           let profiles = try? JSONDecoder().decode([MotorProfile].self, from: d) { savedProfiles = profiles }
     }
 
     private func saveCANIDs() {
