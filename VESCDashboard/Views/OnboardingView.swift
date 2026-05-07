@@ -152,7 +152,7 @@ struct OnboardingView: View {
 
     private var welcomeBody: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("A full-featured VESC motor controller dashboard for iOS — live telemetry, motor configuration, and more, over Bluetooth.")
+            Text("A full-featured VESC motor controller dashboard for iOS — live telemetry, motor configuration, and more, over Bluetooth. By DsSoft.")
                 .font(.title3)
                 .foregroundStyle(.white.opacity(0.85))
                 .lineSpacing(4)
