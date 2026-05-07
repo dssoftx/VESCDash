@@ -124,8 +124,8 @@ struct MotorProfileListView: View {
                 pillButton("Flash", icon: "flame.fill", color: .orange) {
                     vm.applyProfile(profile, storeToFlash: true)
                 }
-                .opacity(vm.isConnected && vm.hasMCConfCache ? 1 : 0.4)
-                .disabled(!vm.isConnected || !vm.hasMCConfCache)
+                .opacity(vm.isConnected ? 1 : 0.4)
+                .disabled(!vm.isConnected)
 
                 Spacer()
             }

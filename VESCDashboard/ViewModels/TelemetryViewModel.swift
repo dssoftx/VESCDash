@@ -406,55 +406,27 @@ final class TelemetryViewModel: ObservableObject {
     func applyProfile(_ profile: MotorProfile, storeToFlash: Bool = true) {
         guard isConnected else { motorLimitsSendState = .failed("Not connected"); return }
 
-        var applied: [String] = []
-        var skipped: [String] = []
-
-        if storeToFlash {
-            // Full profile via COMM_SET_MCCONF (always writes flash)
-            if let localCache = rawMCConfLocal,
-               let pkt = VESCProtocolParser.mcconfPayloadWithProfile(fromReceivedPayload: localCache, profile: profile) {
-                bleManager.send(VESCProtocolParser.buildPacket(payload: pkt))
-                var u = pkt; u[0] = VESCCommand.getMCConf.rawValue; rawMCConfLocal = u
-                applied.append("local")
-            } else if rawMCConfLocal == nil { skipped.append("local") }
-
-            for node in canNodes {
-                let id = node.id
-                if let nodeCache = rawMCConfByCANID[id],
-                   let pkt = VESCProtocolParser.mcconfPayloadWithProfile(fromReceivedPayload: nodeCache, profile: profile) {
-                    bleManager.send(VESCProtocolParser.buildForwardCAN(toID: UInt8(id), commandPayload: pkt))
-                    var u = pkt; u[0] = VESCCommand.getMCConf.rawValue; rawMCConfByCANID[id] = u
-                    applied.append("CAN #\(id)")
-                } else { skipped.append("CAN #\(id)") }
-            }
-
-            guard !applied.isEmpty else {
-                motorLimitsSendState = .failed("No MCCONF cached — connecting auto-reads all VESCs")
-                return
-            }
-        } else {
-            // RAM-only via COMM_SET_MCCONF_TEMP (firmware 6.x): sends full profile including
-            // ERPM and watt limits. forwardCAN=true — local VESC auto-forwards to all CAN nodes.
-            let ramPayload = VESCProtocolParser.mcconfTempPayload(
-                currentMinScale: profile.currentMinScale,
-                currentMaxScale: profile.currentMaxScale,
-                minERPM: profile.minERPM,
-                maxERPM: profile.maxERPM,
-                wattMin: profile.wattMin,
-                wattMax: profile.wattMax,
-                store: false,
-                forwardCAN: true
-            )
-            bleManager.send(VESCProtocolParser.buildPacket(payload: ramPayload))
-            let canCount = canNodes.count
-            applied.append(canCount > 0 ? "local + \(canCount) CAN node(s) (auto-forwarded)" : "local")
-        }
+        // Both flash and RAM use COMM_SET_MCCONF_TEMP with forwardCAN=true so the local VESC
+        // auto-forwards to all CAN nodes. store=true persists to flash, store=false is RAM-only.
+        // This mirrors how VESC Tool applies profiles and avoids full-MCCONF CAN forwarding issues.
+        let payload = VESCProtocolParser.mcconfTempPayload(
+            currentMinScale: profile.currentMinScale,
+            currentMaxScale: profile.currentMaxScale,
+            minERPM: profile.minERPM,
+            maxERPM: profile.maxERPM,
+            wattMin: profile.wattMin,
+            wattMax: profile.wattMax,
+            store: storeToFlash,
+            forwardCAN: true
+        )
+        bleManager.send(VESCProtocolParser.buildPacket(payload: payload))
 
         motorProfile = profile
 
-        let skipSuffix = skipped.isEmpty ? "" : " · auto-fetching config for: \(skipped.joined(separator: ", "))"
+        let canCount = canNodes.count
+        let targets = canCount > 0 ? "local + \(canCount) CAN node(s)" : "local"
         let modeTag = storeToFlash ? "flash" : "RAM"
-        let msg = "[\(modeTag)] Applied to \(applied.joined(separator: ", "))\(skipSuffix)"
+        let msg = "[\(modeTag)] Applied to \(targets)"
         motorLimitsSendState = .sent(msg)
         appendLog("[PROFILE] \(msg)")
         Task { @MainActor in
@@ -637,15 +609,22 @@ final class TelemetryViewModel: ObservableObject {
                 drainFWVersionQueue()
             }
 
-        case VESCCommand.forwardCAN.rawValue:  // 34 — master may wrap CAN-node responses
-            if payload.count >= 3 {
-                let srcID  = Int(payload[1])
-                let innerCmd = payload[2]
-                if innerCmd == 0, let nodeID = pendingFWVersionCANID, nodeID == srcID {
-                    applyFWVersion(Array(payload[2...]), toNodeID: nodeID)
-                    pendingFWVersionCANID = nil
-                    drainFWVersionQueue()
-                }
+        case VESCCommand.forwardCAN.rawValue:  // 34 — CAN-node responses come back wrapped
+            guard payload.count >= 3 else { break }
+            let srcID    = Int(payload[1])
+            let innerCmd = payload[2]
+            let inner    = Array(payload[2...])
+
+            if innerCmd == 0,  // COMM_GET_FW_VERSION response
+               let nodeID = pendingFWVersionCANID, nodeID == srcID {
+                applyFWVersion(inner, toNodeID: nodeID)
+                pendingFWVersionCANID = nil
+                drainFWVersionQueue()
+            } else if innerCmd == VESCCommand.getMCConf.rawValue {
+                // MCCONF from a CAN node — force the correct source so handleMCConf
+                // stores into rawMCConfByCANID[srcID] regardless of queue state.
+                pendingMCConfSource = .can(srcID)
+                handleMCConf(inner)
             }
 
         default:

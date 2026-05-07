@@ -110,7 +110,7 @@ struct MotorProfileEditView: View {
         } header: {
             Text(vm.activeVESCLabel.isEmpty ? "VESC" : vm.activeVESCLabel)
         } footer: {
-            Text("Populates fields with current VESC limits.")
+            Text("Optional — populates fields from the current VESC limits.")
                 .font(.caption)
         }
     }
