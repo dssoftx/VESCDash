@@ -231,6 +231,7 @@ struct SettingsView: View {
     }
 
     private func fmt(_ d: Double) -> String {
-        d.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(d)) : String(d)
+        guard d.isFinite, d >= Double(Int.min), d <= Double(Int.max) else { return String(format: "%.3g", d) }
+        return d.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(d)) : String(d)
     }
 }

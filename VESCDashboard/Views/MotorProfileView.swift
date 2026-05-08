@@ -248,7 +248,8 @@ struct MotorProfileEditView: View {
     }
 
     private func fmt(_ f: Float) -> String {
-        f.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(f)) : String(format: "%.2f", f)
+        guard f.isFinite, f >= Float(Int.min), f <= Float(Int.max) else { return String(format: "%.2f", f) }
+        return f.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(f)) : String(format: "%.2f", f)
     }
 
     private func fmtKMH(_ f: Float) -> String { String(format: "%.1f", f) }

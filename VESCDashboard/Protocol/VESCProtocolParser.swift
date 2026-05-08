@@ -403,9 +403,17 @@ enum VESCProtocolParser {
     //   si_wheel_diameter   [447-450]  float32 (metres)
 
     /// Reads drivetrain SI params from a raw COMM_GET_MCCONF payload.
+    /// Returns nil if the payload is too short OR if the values are outside plausible hardware
+    /// ranges — this catches firmware layout changes where the offsets no longer match.
     static func readDrivetrainFromMCConf(payload: [UInt8]) -> (poles: Int, gearRatio: Float, wheelDiameterM: Float)? {
         guard payload.count >= 452 else { return nil }
-        return (Int(payload[442]), float32BEAt(payload, 443), float32BEAt(payload, 447))
+        let poles     = Int(payload[442])
+        let gearRatio = float32BEAt(payload, 443)
+        let wheelM    = float32BEAt(payload, 447)
+        guard poles >= 2,
+              gearRatio.isFinite, gearRatio >= 0, gearRatio <= 200,
+              wheelM.isFinite, wheelM >= 0.02, wheelM <= 5.0 else { return nil }
+        return (poles, gearRatio, wheelM)
     }
 
     /// Patches a COMM_GET_MCCONF payload with FOC detection results and returns a ready-to-send
@@ -484,6 +492,13 @@ enum VESCProtocolParser {
         p.wattMin         = float32BEAt(payload, 78)
         p.currentMaxScale = Float(int16At(payload, 82)) / 10_000.0
         p.currentMinScale = Float(int16At(payload, 84)) / 10_000.0
+        // Reject implausible values — indicates a firmware layout mismatch
+        guard p.maxERPM.isFinite, p.maxERPM >= 0, p.maxERPM <= 3_000_000,
+              p.minERPM.isFinite, p.minERPM <= 0, p.minERPM >= -3_000_000,
+              p.wattMax.isFinite, p.wattMax >= 0,
+              p.wattMin.isFinite, p.wattMin <= 0,
+              p.currentMaxScale >= 0, p.currentMaxScale <= 1.1,
+              p.currentMinScale >= 0, p.currentMinScale <= 1.1 else { return nil }
         return p
     }
 
