@@ -110,6 +110,9 @@ final class TelemetryViewModel: ObservableObject {
         return rawMCConfLocal != nil
     }
 
+    // MARK: Compatibility
+    @Published var mcconfCompatWarning: String? = nil
+
     // MARK: GPS
     let locationManager = LocationManager()
     @Published var gpsSpeedKMH: Double? = nil
@@ -726,12 +729,20 @@ final class TelemetryViewModel: ObservableObject {
         do {
             let limits = try VESCProtocolParser.parseMCConfLimits(payload: payload)
             motorLimits = limits
+            mcconfCompatWarning = nil
             saveMotorLimits()
             if let prof = VESCProtocolParser.readProfileFromMCConf(payload: payload) {
                 motorProfile = prof
             }
             if !wasBg { motorLimitsReadState = .loaded }
             appendLog("[MCCONF] Loaded: phase=\(Int(limits.phaseCurrentMax))A batt=\(Int(limits.batteryCurrentMax))A regen=\(Int(limits.batteryCurrentRegen))A abs=\(Int(limits.absCurrentMax))A observer=\(limits.observerType) fzv=\(Int(limits.zeroVectorFreqHz))Hz")
+        } catch PacketError.firmwareMismatch(let detail) {
+            // Build the full warning, prepending firmware version if known
+            let fwTag = localFWVersion.map { "Firmware: \($0)\n" } ?? ""
+            mcconfCompatWarning = fwTag + detail
+            // Raw payload still cached — do NOT update motorLimits with garbage values
+            if !wasBg { motorLimitsReadState = .failed("Firmware layout mismatch — config locked (see banner)") }
+            appendLog("[MCCONF] Firmware mismatch — offsets for FW6.05 don't match this firmware")
         } catch {
             if !wasBg { motorLimitsReadState = .failed(error.localizedDescription) }
             appendLog("[MCCONF] Parse error: \(error.localizedDescription)")

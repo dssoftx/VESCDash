@@ -48,6 +48,9 @@ final class BLEManager: NSObject, ObservableObject {
     private var rxBuffer: [UInt8] = []
     private let maxBufferSize = 4096
 
+    // Outbound packet queue — chunks pending BLE write (accessed only on bleQueue)
+    private var writeQueue: [Data] = []
+
     private let bleQueue = DispatchQueue(label: "com.vescdash.ble", qos: .userInitiated)
 
     override init() {
@@ -93,23 +96,40 @@ final class BLEManager: NSObject, ObservableObject {
         central.cancelPeripheralConnection(p)
     }
 
-    /// Write raw bytes to the VESC. The packet should already be framed (use VESCProtocolParser.buildPacket).
+    /// Write raw bytes to the VESC. Enqueues on the BLE queue and respects MTU + flow control.
     func send(_ bytes: [UInt8]) {
+        let data = Data(bytes)
+        bleQueue.async { [weak self] in
+            self?.writeQueue.append(data)
+            self?.flushWriteQueue()
+        }
+    }
+
+    // MARK: - Outbound queue (bleQueue only)
+
+    /// Drains writeQueue using the peripheral's real MTU and canSendWriteWithoutResponse gating.
+    private func flushWriteQueue() {
         guard let p = connectedPeripheral, let tx = txChar else {
-            emit("Send failed: not connected")
+            writeQueue.removeAll()
             return
         }
-        // BLE 4.x MTU is 20 bytes; COMM_GET_VALUES request is only 6 bytes so no chunking needed.
-        // For commands > 20 bytes, chunk writes here.
-        let data = Data(bytes)
-        if data.count <= 20 {
-            p.writeValue(data, for: tx, type: .withoutResponse)
-        } else {
-            var offset = 0
-            while offset < data.count {
-                let chunk = data[offset ..< min(offset + 20, data.count)]
+        // Use the negotiated MTU — typically 182–244 B on modern iOS; never below 20.
+        let mtu = max(20, p.maximumWriteValueLength(for: .withoutResponse))
+
+        while !writeQueue.isEmpty {
+            guard p.canSendWriteWithoutResponse else {
+                // Peripheral buffer full — readyToSendWriteWithoutResponse will resume us.
+                return
+            }
+            let packet = writeQueue[0]
+            if packet.count <= mtu {
+                writeQueue.removeFirst()
+                p.writeValue(packet, for: tx, type: .withoutResponse)
+            } else {
+                // Send one MTU-sized chunk and leave the remainder at the front.
+                let chunk = Data(packet.prefix(mtu))
+                writeQueue[0] = Data(packet.dropFirst(mtu))
                 p.writeValue(chunk, for: tx, type: .withoutResponse)
-                offset += 20
             }
         }
     }
@@ -248,6 +268,7 @@ extension BLEManager: CBCentralManagerDelegate {
         txChar = nil
         rxChar = nil
         rxBuffer.removeAll()
+        writeQueue.removeAll()
         currentDevice = nil
         emit("Disconnected: \(error?.localizedDescription ?? "clean")")
         DispatchQueue.main.async { self.connectionState = .idle }
@@ -327,5 +348,11 @@ extension BLEManager: CBPeripheralDelegate {
                     didWriteValueFor characteristic: CBCharacteristic,
                     error: Error?) {
         if let error { emit("Write error: \(error)") }
+    }
+
+    // Fired by iOS when the peripheral's transmit buffer has space again.
+    func peripheral(_ peripheral: CBPeripheral,
+                    readyToSendWriteWithoutResponse characteristic: CBCharacteristic) {
+        flushWriteQueue()
     }
 }

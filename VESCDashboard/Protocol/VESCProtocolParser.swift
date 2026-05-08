@@ -54,6 +54,7 @@ enum PacketError: Error, LocalizedError {
     case invalidEndByte(UInt8)
     case unexpectedCommand(UInt8)
     case payloadTooShort(needed: Int, have: Int)
+    case firmwareMismatch(detail: String)
 
     var errorDescription: String? {
         switch self {
@@ -63,6 +64,7 @@ enum PacketError: Error, LocalizedError {
         case .invalidEndByte(let b):        return "Invalid end byte 0x\(String(b, radix: 16))"
         case .unexpectedCommand(let c):     return "Unexpected command \(c)"
         case .payloadTooShort(let n, let h): return "Payload too short: need \(n), have \(h)"
+        case .firmwareMismatch(let d):      return d
         }
     }
 }
@@ -242,7 +244,48 @@ enum VESCProtocolParser {
             c.fieldWeakeningCurrentMax = float32BEAt(payload, 307)
             c.fieldWeakeningDutyStart  = Float(int16At(payload, 311)) / 10000.0
         }
+
+        // Sanity-check the critical current limits. Values outside these ranges mean
+        // the FW6.05 byte offsets don't match this firmware version.
+        let plausible = { (v: Float, lo: Float, hi: Float) -> Bool in v.isFinite && v >= lo && v <= hi }
+        let badPhaseMax    = !plausible(c.phaseCurrentMax,    0,    5000)
+        let badBattMax     = !plausible(c.batteryCurrentMax,  0,    5000)
+        let badAbsMax      = !plausible(c.absCurrentMax,      0,   15000)
+        if badPhaseMax || badBattMax || badAbsMax {
+            throw PacketError.firmwareMismatch(detail: mcconfMismatchDiagnostic(payload: payload, parsed: c))
+        }
         return c
+    }
+
+    /// Builds a human-readable diagnostic string for a firmware layout mismatch.
+    /// Designed to be copied by the user and sent to the developer.
+    static func mcconfMismatchDiagnostic(payload: [UInt8], parsed: MotorLimitsConfig) -> String {
+        func hex4(_ offset: Int) -> String {
+            guard offset + 3 < payload.count else { return "?? ?? ?? ??" }
+            return (0..<4).map { String(format: "%02X", payload[offset + $0]) }.joined(separator: " ")
+        }
+        func fv(_ f: Float) -> String {
+            f.isFinite ? String(format: "%.3g", f) : (f.isNaN ? "NaN" : (f > 0 ? "+Inf" : "-Inf"))
+        }
+        let dumpRange = min(payload.count, 50)
+        let hexDump = (0..<dumpRange).map { String(format: "%02X", payload[$0]) }.joined(separator: " ")
+
+        return """
+        ━━━ VESC MCCONF Offset Mismatch ━━━
+        Payload size : \(payload.count) B
+        FW6.05 offsets used — values below may be garbage:
+
+          phaseCurrentMax   [9-12]  = \(fv(parsed.phaseCurrentMax)) A  raw: \(hex4(9))
+          phaseCurrentRegen [13-16] = \(fv(parsed.phaseCurrentRegen)) A  raw: \(hex4(13))
+          batteryCurrentMax [17-20] = \(fv(parsed.batteryCurrentMax)) A  raw: \(hex4(17))
+          battCurrentRegen  [21-24] = \(fv(parsed.batteryCurrentRegen)) A  raw: \(hex4(21))
+          absCurrentMax     [29-32] = \(fv(parsed.absCurrentMax)) A  raw: \(hex4(29))
+
+        First 50 bytes (hex):
+        \(hexDump)
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        Config tabs are locked. Share this report with the developer.
+        """
     }
 
     // MARK: - COMM_SET_MCCONF (cmd 13)

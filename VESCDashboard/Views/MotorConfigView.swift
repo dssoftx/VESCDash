@@ -1,8 +1,11 @@
 import SwiftUI
+import UIKit
 
 struct MotorConfigView: View {
     @ObservedObject var vm: TelemetryViewModel
     @Environment(\.dismiss) private var dismiss
+
+    @State private var copiedWarning = false
 
     // Current limits
     @State private var battMax: String = ""
@@ -33,14 +36,23 @@ struct MotorConfigView: View {
         return true
     }
 
+    private var isLocked: Bool { vm.mcconfCompatWarning != nil }
+
     var body: some View {
         NavigationStack {
             Form {
+                if let warning = vm.mcconfCompatWarning {
+                    compatWarningSection(warning)
+                }
                 readSection
                 batterySection
+                    .disabled(isLocked)
                 phaseSection
+                    .disabled(isLocked)
                 focSection
+                    .disabled(isLocked)
                 actionSection
+                    .disabled(isLocked)
             }
             .navigationTitle(vm.activeVESCLabel.isEmpty ? "Motor Config" : "Motor Config · \(vm.activeVESCLabel)")
             .navigationBarTitleDisplayMode(.inline)
@@ -60,6 +72,48 @@ struct MotorConfigView: View {
             }
         }
         .preferredColorScheme(.dark)
+    }
+
+    // MARK: - Compat Warning Banner
+
+    private func compatWarningSection(_ warning: String) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Firmware Layout Mismatch", systemImage: "exclamationmark.triangle.fill")
+                    .font(.headline)
+                    .foregroundStyle(.orange)
+
+                Text("The MCCONF byte offsets used by this app (firmware 6.05) do not match the firmware on your VESC. All config fields are locked to prevent writing corrupt data.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                ScrollView {
+                    Text(warning)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.primary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxHeight: 160)
+                .padding(8)
+                .background(Color(.systemGray6).opacity(0.5))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                Button {
+                    UIPasteboard.general.string = warning
+                    copiedWarning = true
+                    Task { try? await Task.sleep(nanoseconds: 2_000_000_000); copiedWarning = false }
+                } label: {
+                    Label(copiedWarning ? "Copied!" : "Copy Report", systemImage: copiedWarning ? "checkmark" : "doc.on.doc")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(copiedWarning ? .green : .orange)
+            }
+            .padding(.vertical, 4)
+        } header: {
+            Text("Compatibility")
+        }
     }
 
     // MARK: - Read Section
@@ -295,7 +349,8 @@ struct MotorConfigView: View {
     }
 
     private func fmt(_ f: Float) -> String {
-        f.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(f)) : String(f)
+        guard f.isFinite, f >= Float(Int.min), f <= Float(Int.max) else { return String(format: "%.2f", f) }
+        return f.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(f)) : String(f)
     }
 
     private func fmtDuty(_ f: Float) -> String {

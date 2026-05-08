@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Motor Type
 
@@ -85,6 +86,9 @@ struct MotorWizardView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var step: WizardStep = .motorInfo
+    @State private var copiedWarning = false
+
+    private var isLocked: Bool { vm.mcconfCompatWarning != nil }
 
     // Step 1 — Motor & Drivetrain
     @State private var motorType: MotorType = .outrunnerMedium
@@ -122,6 +126,7 @@ struct MotorWizardView: View {
             VStack(spacing: 0) {
                 stepIndicator
                 Divider()
+                compatWarningBanner
                 switch step {
                 case .motorInfo: motorInfoStep
                 case .battery:   batteryStep
@@ -154,6 +159,38 @@ struct MotorWizardView: View {
             }
         }
         .preferredColorScheme(.dark)
+    }
+
+    // MARK: - Compat Warning Banner
+
+    @ViewBuilder
+    private var compatWarningBanner: some View {
+        if let warning = vm.mcconfCompatWarning {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Firmware Layout Mismatch — Detection Locked", systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.orange)
+                Text("VESC firmware layout does not match app expectations. FOC detection and motor config are locked to prevent writing corrupt data.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Button {
+                    UIPasteboard.general.string = warning
+                    copiedWarning = true
+                    Task { try? await Task.sleep(nanoseconds: 2_000_000_000); copiedWarning = false }
+                } label: {
+                    Label(copiedWarning ? "Copied!" : "Copy Diagnostic Report",
+                          systemImage: copiedWarning ? "checkmark" : "doc.on.doc")
+                        .font(.caption)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(copiedWarning ? .green : .orange)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(Color.orange.opacity(0.10))
+            Divider()
+        }
     }
 
     // MARK: - Step Indicator
@@ -372,7 +409,7 @@ struct MotorWizardView: View {
         Form {
             Section {
                 ampField("Detection Current", placeholder: "10", text: $detectionCurrent,
-                         hint: "Recommended: motor phase max ÷ 3  (currently ~\(Int(vm.motorLimits.phaseCurrentMax / 3)) A)")
+                         hint: safeDetectionHint)
                 LabeledContent("Time Constant") {
                     HStack(spacing: 4) {
                         TextField("1000", text: $tc_µs)
@@ -404,7 +441,7 @@ struct MotorWizardView: View {
                         Text("Measure")
                     }
                     .buttonStyle(.bordered)
-                    .disabled(!vm.isConnected || isDetecting)
+                    .disabled(!vm.isConnected || isDetecting || isLocked)
                 }
                 rlResultRow
             }
@@ -424,7 +461,7 @@ struct MotorWizardView: View {
                         Text("Measure")
                     }
                     .buttonStyle(.bordered)
-                    .disabled(!vm.isConnected || !rlDone || isDetecting)
+                    .disabled(!vm.isConnected || !rlDone || isDetecting || isLocked)
                     .alert("Motor Will Spin", isPresented: $showSpinWarning) {
                         Button("Cancel", role: .cancel) {}
                         Button("Start", role: .destructive) {
@@ -487,7 +524,7 @@ struct MotorWizardView: View {
                         Spacer()
                     }
                 }
-                .disabled(!vm.isConnected || !vm.hasMCConfCache)
+                .disabled(!vm.isConnected || !vm.hasMCConfCache || isLocked)
             } header: {
                 Text("Apply")
             } footer: {
@@ -584,11 +621,19 @@ struct MotorWizardView: View {
     }
 
     private func fmtF(_ v: Float) -> String {
-        v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : String(format: "%.3g", v)
+        guard v.isFinite, v >= Float(Int.min), v <= Float(Int.max) else { return String(format: "%.3g", v) }
+        return v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : String(format: "%.3g", v)
     }
 
     private func fmtF(_ v: Double) -> String {
-        v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : String(format: "%.3g", v)
+        guard v.isFinite, v >= Double(Int.min), v <= Double(Int.max) else { return String(format: "%.3g", v) }
+        return v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : String(format: "%.3g", v)
+    }
+
+    private var safeDetectionHint: String {
+        let v = vm.motorLimits.phaseCurrentMax / 3
+        let approx = (v.isFinite && v >= Float(Int.min) && v <= Float(Int.max)) ? Int(v) : 0
+        return "Recommended: motor phase max ÷ 3  (currently ~\(approx) A)"
     }
 
     private func extractRL(_ state: WizardDetectionState) -> (r: Float, l: Float, ldLq: Float)? {
