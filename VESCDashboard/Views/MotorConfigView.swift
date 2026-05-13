@@ -36,12 +36,14 @@ struct MotorConfigView: View {
         return true
     }
 
-    private var isLocked: Bool { vm.mcconfCompatWarning != nil }
+    private var isLocked: Bool { vm.mcconfCompatWarning != nil || vm.fwMCConfBlocked }
 
     var body: some View {
         NavigationStack {
             Form {
-                if let warning = vm.mcconfCompatWarning {
+                if vm.fwMCConfBlocked {
+                    fwBlockedSection
+                } else if let warning = vm.mcconfCompatWarning {
                     compatWarningSection(warning)
                 }
                 readSection
@@ -72,6 +74,38 @@ struct MotorConfigView: View {
             }
         }
         .preferredColorScheme(.dark)
+    }
+
+    // MARK: - Firmware Version Block Banner
+
+    private var fwBlockedSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Firmware Not Supported", systemImage: "lock.fill")
+                    .font(.headline)
+                    .foregroundStyle(.red)
+
+                if let v = vm.localFWVersion {
+                    Text("Your VESC is running firmware **\(v)**.")
+                        .font(.caption)
+                }
+
+                let allowed = VESCProtocolParser.allowedFirmwareVersions
+                    .sorted()
+                    .map { v in "\(v / 100).\(String(format: "%02d", v % 100))" }
+                    .joined(separator: ", ")
+                Text("Motor config writes and FOC detection are only allowed on supported firmware (\(allowed)). Use VESC Tool to update your firmware or configure this VESC.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text("Motor **profiles** (current scale, speed limits) still work on any firmware via the Profiles screen.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 4)
+        } header: {
+            Text("Unsupported Firmware")
+        }
     }
 
     // MARK: - Compat Warning Banner

@@ -88,7 +88,7 @@ struct MotorWizardView: View {
     @State private var step: WizardStep = .motorInfo
     @State private var copiedWarning = false
 
-    private var isLocked: Bool { vm.mcconfCompatWarning != nil }
+    private var isLocked: Bool { vm.mcconfCompatWarning != nil || vm.fwMCConfBlocked }
 
     // Step 1 — Motor & Drivetrain
     @State private var motorType: MotorType = .outrunnerMedium
@@ -165,7 +165,24 @@ struct MotorWizardView: View {
 
     @ViewBuilder
     private var compatWarningBanner: some View {
-        if let warning = vm.mcconfCompatWarning {
+        if vm.fwMCConfBlocked {
+            VStack(alignment: .leading, spacing: 6) {
+                Label("Firmware Not Supported — Detection Locked", systemImage: "lock.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.red)
+                let allowed = VESCProtocolParser.allowedFirmwareVersions
+                    .sorted()
+                    .map { v in "\(v / 100).\(String(format: "%02d", v % 100))" }
+                    .joined(separator: ", ")
+                Text("Firmware \(vm.localFWVersion ?? "unknown") is not in the supported list (\(allowed)). FOC detection and motor config writes are blocked. Update firmware in VESC Tool.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(Color.red.opacity(0.10))
+            Divider()
+        } else if let warning = vm.mcconfCompatWarning {
             VStack(alignment: .leading, spacing: 8) {
                 Label("Firmware Layout Mismatch — Detection Locked", systemImage: "exclamationmark.triangle.fill")
                     .font(.caption.weight(.semibold))
@@ -533,8 +550,7 @@ struct MotorWizardView: View {
                           systemImage: "exclamationmark.triangle")
                         .font(.caption).foregroundStyle(.orange)
                 } else {
-                    let bat = vm.batteryConfig
-                    Label("Saves R, L, λ, KP, KI, observer gain, poles, gear ratio, wheel diameter, and battery cutoffs (\(String(format: "%.1f", bat.cutEndV))–\(String(format: "%.1f", bat.cutStartV)) V) to VESC flash.",
+                    Label("Saves R, L, λ, KP, KI, observer gain, poles, gear ratio, and wheel diameter to VESC flash. Battery voltage cutoffs are left unchanged — configure them in VESC Tool.",
                           systemImage: "flame")
                         .font(.caption).foregroundStyle(.orange)
                 }

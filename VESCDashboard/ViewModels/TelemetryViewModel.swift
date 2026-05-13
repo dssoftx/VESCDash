@@ -89,7 +89,8 @@ final class TelemetryViewModel: ObservableObject {
     @Published var selectedCANID: Int? = nil   // nil = local (master) VESC
     @Published var isScanningCAN = false
     @Published var persistedCANIDs: [Int] = []
-    @Published var localFWVersion: String? = nil   // firmware version of the directly-connected VESC
+    @Published var localFWVersion: String? = nil    // firmware version of the directly-connected VESC (display string)
+    @Published var localFWVersionInt: Int? = nil   // major×100 + minor (e.g. 6.05 → 605); nil until received
     private var pingCANNodesCountBefore = 0
     private var pendingFWVersionCANID: Int? = nil
     private var fwVersionQueue: [Int] = []
@@ -108,6 +109,13 @@ final class TelemetryViewModel: ObservableObject {
     var hasMCConfCache: Bool {
         if let id = selectedCANID { return rawMCConfByCANID[id] != nil }
         return rawMCConfLocal != nil
+    }
+
+    /// True when the connected firmware version is known and not in `allowedFirmwareVersions`.
+    /// COMM_SET_MCCONF and FOC detection writes are blocked. COMM_SET_MCCONF_TEMP (profiles) always allowed.
+    var fwMCConfBlocked: Bool {
+        guard let v = localFWVersionInt else { return false }
+        return !VESCProtocolParser.allowedFirmwareVersions.contains(v)
     }
 
     // MARK: Compatibility
@@ -369,6 +377,10 @@ final class TelemetryViewModel: ObservableObject {
         siMotorPoles: Int, siGearRatio: Float, siWheelDiameterMM: Float
     ) {
         guard isConnected else { motorLimitsSendState = .failed("Not connected"); return }
+        if fwMCConfBlocked {
+            motorLimitsSendState = .failed("Firmware \(localFWVersion ?? "unknown") not supported — use VESC Tool")
+            return
+        }
         let cache: [UInt8]? = selectedCANID.map { rawMCConfByCANID[$0] } ?? rawMCConfLocal
         guard let cache else { motorLimitsSendState = .failed("Read MCCONF first"); return }
 
@@ -377,11 +389,7 @@ final class TelemetryViewModel: ObservableObject {
             r_Ω: r_Ω, l_µH: l_µH, ldLqDiff_µH: ldLqDiff_µH, lambda_Wb: lambda_Wb, tc_µs: tc_µs,
             siMotorPoles: siMotorPoles,
             siGearRatio: siGearRatio,
-            siWheelDiameterM: siWheelDiameterMM / 1000.0,
-            batteryMinVin:   batteryConfig.minVin,
-            batteryMaxVin:   batteryConfig.maxVin,
-            batteryCutStart: batteryConfig.cutStartV,
-            batteryCutEnd:   batteryConfig.cutEndV
+            siWheelDiameterM: siWheelDiameterMM / 1000.0
         ) else { motorLimitsSendState = .failed("Payload build failed"); return }
 
         sendCommand(writePayload)
@@ -535,6 +543,10 @@ final class TelemetryViewModel: ObservableObject {
     /// Falls back to COMM_SET_MCCONF_TEMP (current limits only, RAM or flash) otherwise.
     func sendMotorLimits(storeToFlash: Bool) {
         guard isConnected else { motorLimitsSendState = .failed("Not connected"); return }
+        if fwMCConfBlocked {
+            motorLimitsSendState = .failed("Firmware \(localFWVersion ?? "unknown") not supported — use VESC Tool")
+            return
+        }
 
         let cache: [UInt8]? = selectedCANID.map { rawMCConfByCANID[$0] } ?? rawMCConfLocal
         if let cache,
@@ -543,19 +555,9 @@ final class TelemetryViewModel: ObservableObject {
             saveMotorLimits()
             motorLimitsSendState = .sent("Sent & saved to flash")
         } else {
-            var payload: [UInt8] = [VESCCommand.setMCConfTemp.rawValue]
-            payload.append(storeToFlash ? 1 : 0)
-            payload.append(0)
-            payload.append(1)
-            payload.append(0)
-            appendFloat32BE(&payload, motorLimits.phaseCurrentMax)
-            appendFloat32BE(&payload, -abs(motorLimits.phaseCurrentRegen))
-            appendFloat32BE(&payload, motorLimits.batteryCurrentMax)
-            appendFloat32BE(&payload, min(motorLimits.batteryCurrentRegen, 0))
-            appendFloat32BE(&payload, motorLimits.absCurrentMax)
-            sendCommand(payload)
-            saveMotorLimits()
-            motorLimitsSendState = .sent(storeToFlash ? "Sent & saved to flash" : "Sent (RAM only)")
+            // COMM_SET_MCCONF requires the full cached payload — raw amp limits cannot be written
+            // without knowing the firmware layout. Read motor config first.
+            motorLimitsSendState = .failed("Read motor config first")
         }
 
         Task { @MainActor in
@@ -686,9 +688,10 @@ final class TelemetryViewModel: ObservableObject {
             hw.append(Character(UnicodeScalar(payload[i])))
             i += 1
         }
+        localFWVersionInt = Int(major) * 100 + Int(minor)
         localFWVersion = hw.isEmpty ? "\(major).\(String(format: "%02d", minor))"
                                     : "\(major).\(String(format: "%02d", minor)) · \(hw)"
-        appendLog("[FW] Local VESC firmware: \(localFWVersion!)")
+        appendLog("[FW] Local VESC firmware: \(localFWVersion!)\(fwMCConfBlocked ? " — MCCONF BLOCKED (unsupported firmware)" : "")")
     }
 
     private func requestLocalFWVersion() {
@@ -726,14 +729,18 @@ final class TelemetryViewModel: ObservableObject {
         }
         pendingMCConfSource = .local
 
+        // Profile fields [33-86] are at stable offsets across all firmware 6.x — read them
+        // regardless of whether the full MCCONF parse succeeds. This ensures profiles can be
+        // applied via COMM_SET_MCCONF_TEMP even on unsupported or mismatched firmware.
+        if let prof = VESCProtocolParser.readProfileFromMCConf(payload: payload) {
+            motorProfile = prof
+        }
+
         do {
             let limits = try VESCProtocolParser.parseMCConfLimits(payload: payload)
             motorLimits = limits
             mcconfCompatWarning = nil
             saveMotorLimits()
-            if let prof = VESCProtocolParser.readProfileFromMCConf(payload: payload) {
-                motorProfile = prof
-            }
             if !wasBg { motorLimitsReadState = .loaded }
             appendLog("[MCCONF] Loaded: phase=\(Int(limits.phaseCurrentMax))A batt=\(Int(limits.batteryCurrentMax))A regen=\(Int(limits.batteryCurrentRegen))A abs=\(Int(limits.absCurrentMax))A observer=\(limits.observerType) fzv=\(Int(limits.zeroVectorFreqHz))Hz")
         } catch PacketError.firmwareMismatch(let detail) {
@@ -834,6 +841,7 @@ final class TelemetryViewModel: ObservableObject {
                     self.telemetry = .empty
                     self.speedKMH = 0
                     self.localFWVersion = nil
+                    self.localFWVersionInt = nil
                     self.fwVersionQueue.removeAll()
                     self.pendingFWVersionCANID = nil
                     self.pendingLocalFWVersion = false

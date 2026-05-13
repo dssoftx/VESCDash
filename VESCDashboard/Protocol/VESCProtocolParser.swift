@@ -71,6 +71,16 @@ enum PacketError: Error, LocalizedError {
 
 enum VESCProtocolParser {
 
+    // MARK: - Firmware version allowlist
+    //
+    // COMM_SET_MCCONF reads/writes are blocked for firmware not in this set because the
+    // byte offsets are version-specific and writing at wrong offsets corrupts motor config.
+    // COMM_SET_MCCONF_TEMP (profiles) is always allowed — it has no offset-dependent fields.
+    //
+    // To add a new firmware version: verify its parameters_mcconf.xml SerOrder matches the
+    // offsets in this file (or add a new isFWxxx branch), then append the version number here.
+    static let allowedFirmwareVersions: Set<Int> = [605, 606]
+
     // MARK: - CRC-CCITT
 
     static func crc16(_ bytes: ArraySlice<UInt8>) -> UInt16 {
@@ -221,8 +231,8 @@ enum VESCProtocolParser {
     //   …
     //   [251]     foc_observer_type : uint8   (0=Ortega, 1=MXLemming, …, 3=MXLemming+λ)
     //   …
-    //   [307-310] foc_fw_current_max: float32 BE  → A (0 = FW disabled)
-    //   [311-312] foc_fw_duty_start : int16 / 10000 → fraction (e.g. 9000 = 0.90)
+    //   [307-310] foc_fw_current_max: float32 BE  → A (FW 6.05; FW 6.06: [311-314])
+    //   [311-312] foc_fw_duty_start : int16 / 10000 → fraction (FW 6.05; FW 6.06: [315-316])
 
     static func parseMCConfLimits(payload: [UInt8]) throws -> MotorLimitsConfig {
         guard payload.count >= 33, payload[0] == VESCCommand.getMCConf.rawValue else {
@@ -235,14 +245,24 @@ enum VESCProtocolParser {
         c.batteryCurrentRegen = float32BEAt(payload, 21)
         c.absCurrentMax       = float32BEAt(payload, 29)
         if payload.count >= 136 {
-            c.zeroVectorFreqHz = float32BEAt(payload, 132)
+            let fzv = float32BEAt(payload, 132)
+            // foc_f_zv: switching frequency 5 kHz–200 kHz; reject if garbage
+            if fzv.isFinite, fzv >= 5_000, fzv <= 200_000 {
+                c.zeroVectorFreqHz = fzv
+            }
         }
         if payload.count >= 252 {
-            c.observerType = Int(payload[251])
+            let obs = Int(payload[251])
+            if obs < MotorLimitsConfig.observerNames.count { c.observerType = obs }
         }
-        if payload.count >= 313 {
-            c.fieldWeakeningCurrentMax = float32BEAt(payload, 307)
-            c.fieldWeakeningDutyStart  = Float(int16At(payload, 311)) / 10000.0
+        let fwOff = isFW606(payload) ? 311 : 307
+        if payload.count >= fwOff + 6 {
+            let fwCur = float32BEAt(payload, fwOff)
+            if fwCur.isFinite, fwCur >= 0, fwCur <= 1_000 {
+                c.fieldWeakeningCurrentMax = fwCur
+            }
+            let fwDuty = Float(int16At(payload, fwOff + 4)) / 10_000.0
+            if fwDuty >= 0, fwDuty <= 1 { c.fieldWeakeningDutyStart = fwDuty }
         }
 
         // Sanity-check the critical current limits. Values outside these ranges mean
@@ -321,9 +341,10 @@ enum VESCProtocolParser {
         if p.count >= 252 {
             p[251] = UInt8(max(0, min(6, config.observerType)))
         }
-        if p.count >= 313 {
-            setFloat32BE(&p, 307, config.fieldWeakeningCurrentMax)
-            setInt16BE(&p, 311, Int16(config.fieldWeakeningDutyStart * 10000))
+        let fwOff = isFW606(p) ? 311 : 307
+        if p.count >= fwOff + 6 {
+            setFloat32BE(&p, fwOff, config.fieldWeakeningCurrentMax)
+            setInt16BE(&p, fwOff + 4, Int16(config.fieldWeakeningDutyStart * 10000))
         }
         return p
     }
@@ -385,31 +406,47 @@ enum VESCProtocolParser {
 
     // MARK: - MCCONF read helpers for drivetrain / FOC params
     //
-    // Byte offsets (verified against firmware 6.05 parameters_mcconf.xml via SerOrder):
-    //   l_min_vin           [53-56]    float32 — absolute hardware min voltage (hard cutoff)
-    //   l_max_vin           [57-60]    float32 — absolute hardware max voltage
-    //   l_battery_cut_start [61-64]    float32 — voltage to start linearly reducing output
-    //   l_battery_cut_end   [65-68]    float32 — voltage to stop output entirely
-    //   foc_current_kp      [124-127]  float32
-    //   foc_current_ki      [128-131]  float32
-    //   foc_f_zv            [132-135]  float32 (Hz)
-    //   foc_motor_l         [158-161]  float32 (H)
-    //   foc_motor_ld_lq_diff[162-165]  float32 (H)
-    //   foc_motor_r         [166-169]  float32 (Ω)
-    //   foc_motor_flux_linkage [170-173] float32 (Wb)
-    //   foc_observer_gain   [174-177]  float32 (raw × 1e6)
-    //   si_motor_poles      [442]      uint8   (total poles = 2 × pole_pairs)
-    //   si_gear_ratio       [443-446]  float32
-    //   si_wheel_diameter   [447-450]  float32 (metres)
+    // Byte offsets (verified against parameters_mcconf.xml for FW 6.05 and FW 6.06):
+    //
+    //   Encoding note: voltage cutoff fields (l_min_vin etc.) are DOUBLE16 (vTx=7) — each is
+    //   2 bytes, int16 BE, value = int16/10.  They are NOT float32 (4 bytes).
+    //   DO NOT write voltage fields with setFloat32BE — use setInt16BE with value×10.
+    //
+    //   Fields stable across FW 6.05 and FW 6.06:
+    //   l_min_vin           [51-52]    int16/10  (V) DOUBLE16 — hardware absolute min voltage
+    //   l_max_vin           [53-54]    int16/10  (V) DOUBLE16 — hardware absolute max voltage
+    //   l_battery_cut_start [55-56]    int16/10  (V) DOUBLE16 — throttle taper start voltage
+    //   l_battery_cut_end   [57-58]    int16/10  (V) DOUBLE16 — output cutoff voltage
+    //   foc_current_kp      [124-127]  float32 BE
+    //   foc_current_ki      [128-131]  float32 BE
+    //   foc_f_zv            [132-135]  float32 BE (Hz)
+    //   foc_motor_l         [158-161]  float32 BE (H)
+    //   foc_motor_ld_lq_diff[162-165]  float32 BE (H)
+    //   foc_motor_r         [166-169]  float32 BE (Ω)
+    //   foc_motor_flux_linkage [170-173] float32 BE (Wb)
+    //   foc_observer_gain   [174-177]  float32 BE (raw × 1e6)
+    //
+    //   Fields that shift between firmware versions (FW 6.06 adds 4 fields after foc_observer_type):
+    //                         FW 6.05   FW 6.06
+    //   foc_fw_current_max    [307-310] [311-314]  float32 BE (A)
+    //   foc_fw_duty_start     [311-312] [315-316]  int16/10000
+    //   si_motor_poles        [442]     [448]      uint8
+    //   si_gear_ratio         [443-446] [449-452]  float32 BE
+    //   si_wheel_diameter     [447-450] [453-456]  float32 BE (metres)
+    //
+    //   Detection: payload.count >= 484 → FW 6.06; otherwise FW 6.05 (payload = 478 B)
+
+    private static func isFW606(_ payload: [UInt8]) -> Bool { payload.count >= 484 }
 
     /// Reads drivetrain SI params from a raw COMM_GET_MCCONF payload.
     /// Returns nil if the payload is too short OR if the values are outside plausible hardware
     /// ranges — this catches firmware layout changes where the offsets no longer match.
     static func readDrivetrainFromMCConf(payload: [UInt8]) -> (poles: Int, gearRatio: Float, wheelDiameterM: Float)? {
-        guard payload.count >= 452 else { return nil }
-        let poles     = Int(payload[442])
-        let gearRatio = float32BEAt(payload, 443)
-        let wheelM    = float32BEAt(payload, 447)
+        let polesOff = isFW606(payload) ? 448 : 442
+        guard payload.count >= polesOff + 9 else { return nil }
+        let poles     = Int(payload[polesOff])
+        let gearRatio = float32BEAt(payload, polesOff + 1)
+        let wheelM    = float32BEAt(payload, polesOff + 5)
         guard poles >= 2,
               gearRatio.isFinite, gearRatio >= 0, gearRatio <= 200,
               wheelM.isFinite, wheelM >= 0.02, wheelM <= 5.0 else { return nil }
@@ -418,6 +455,11 @@ enum VESCProtocolParser {
 
     /// Patches a COMM_GET_MCCONF payload with FOC detection results and returns a ready-to-send
     /// COMM_SET_MCCONF payload.  The firmware signature bytes are preserved unchanged.
+    ///
+    /// Only FOC electrical params (R, L, λ, KP, KI, observer gain) and drivetrain SI params
+    /// (poles, gear ratio, wheel diameter) are patched. Battery voltage cutoffs are intentionally
+    /// NOT written here — their offsets vary between firmware versions and the user's existing
+    /// VESC values are correct. Configure voltage cutoffs in VESC Tool or a future dedicated UI.
     ///
     /// - Parameters:
     ///   - r_Ω:              Phase resistance (Ω).
@@ -431,11 +473,7 @@ enum VESCProtocolParser {
     static func mcconfPayloadWithFOCDetection(
         fromReceivedPayload payload: [UInt8],
         r_Ω: Float, l_µH: Float, ldLqDiff_µH: Float, lambda_Wb: Float, tc_µs: Float,
-        siMotorPoles: Int, siGearRatio: Float, siWheelDiameterM: Float,
-        batteryMinVin: Float? = nil,
-        batteryMaxVin: Float? = nil,
-        batteryCutStart: Float? = nil,
-        batteryCutEnd: Float? = nil
+        siMotorPoles: Int, siGearRatio: Float, siWheelDiameterM: Float
     ) -> [UInt8]? {
         guard payload.count >= 33, payload[0] == VESCCommand.getMCConf.rawValue else { return nil }
         var p = payload
@@ -448,14 +486,6 @@ enum VESCProtocolParser {
         let ki      = Float(r_Ω * bw)
         let obsgain = Float(1e3 / (lambda_Wb * lambda_Wb))
 
-        // Battery voltage cutoffs (offsets verified against firmware 6.05)
-        if p.count >= 70 {
-            if let v = batteryMinVin   { setFloat32BE(&p, 53, v) }
-            if let v = batteryMaxVin   { setFloat32BE(&p, 57, v) }
-            if let v = batteryCutStart { setFloat32BE(&p, 61, v) }
-            if let v = batteryCutEnd   { setFloat32BE(&p, 65, v) }
-        }
-
         if p.count >= 175 {
             setFloat32BE(&p, 124, kp)
             setFloat32BE(&p, 128, ki)
@@ -465,10 +495,11 @@ enum VESCProtocolParser {
             setFloat32BE(&p, 170, lambda_Wb)
             setFloat32BE(&p, 174, obsgain)
         }
-        if p.count >= 452 {
-            p[442] = UInt8(max(2, min(254, siMotorPoles)))
-            setFloat32BE(&p, 443, siGearRatio)
-            setFloat32BE(&p, 447, siWheelDiameterM)
+        let polesOff = isFW606(p) ? 448 : 442
+        if p.count >= polesOff + 9 {
+            p[polesOff] = UInt8(max(2, min(254, siMotorPoles)))
+            setFloat32BE(&p, polesOff + 1, siGearRatio)
+            setFloat32BE(&p, polesOff + 5, siWheelDiameterM)
         }
         return p
     }

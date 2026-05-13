@@ -83,6 +83,13 @@ struct MotorProfileListView: View {
 
     @ViewBuilder
     private var statusRow: some View {
+        if vm.fwMCConfBlocked {
+            Label("Firmware \(vm.localFWVersion ?? "unknown") — motor config locked, but profiles work on any VESC firmware",
+                  systemImage: "info.circle")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+                .listRowBackground(Color.clear)
+        }
         switch vm.motorLimitsSendState {
         case .sent(let msg):
             Label(msg, systemImage: "checkmark.circle.fill")
