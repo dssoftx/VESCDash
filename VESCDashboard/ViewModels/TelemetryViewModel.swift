@@ -66,6 +66,7 @@ final class TelemetryViewModel: ObservableObject {
 
     // MARK: Peak stats (reset on disconnect or CAN-node switch)
     @Published var peakSpeedKMH: Double = 0
+    @Published var peakGPSSpeedKMH: Double = 0
     @Published var peakPowerW: Double = 0
     @Published var peakMotorCurrentA: Float = 0
 
@@ -533,6 +534,7 @@ final class TelemetryViewModel: ObservableObject {
 
     func resetPeakStats() {
         peakSpeedKMH = 0
+        peakGPSSpeedKMH = 0
         peakPowerW = 0
         peakMotorCurrentA = 0
     }
@@ -885,7 +887,12 @@ final class TelemetryViewModel: ObservableObject {
 
         locationManager.$speedKMH
             .receive(on: RunLoop.main)
-            .assign(to: &$gpsSpeedKMH)
+            .sink { [weak self] speed in
+                guard let self else { return }
+                self.gpsSpeedKMH = speed
+                if let s = speed { self.peakGPSSpeedKMH = max(self.peakGPSSpeedKMH, s) }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Log

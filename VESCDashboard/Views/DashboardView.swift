@@ -318,6 +318,10 @@ struct DashboardView: View {
                 peakCell("Peak Power",   String(format: "%.0f", vm.peakPowerW),         "W")
                 Rectangle().fill(ui.lightMode ? Color(.systemGray4) : .white.opacity(0.12)).frame(width: 1, height: 28)
                 peakCell("Peak Motor A", String(format: "%.1f", vm.peakMotorCurrentA),  "A")
+                if ui.showGPSSpeed {
+                    Rectangle().fill(ui.lightMode ? Color(.systemGray4) : .white.opacity(0.12)).frame(width: 1, height: 28)
+                    peakCell("GPS Top Speed", String(format: "%.1f", vm.peakGPSSpeedKMH), "km/h")
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
