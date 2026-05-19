@@ -7,7 +7,7 @@ private enum OnboardingPage: Int, CaseIterable {
 
     var title: String {
         switch self {
-        case .welcome:  return "VESCDash"
+        case .welcome:  return "Dynetra"
         case .safety:   return "Safety First"
         case .warranty: return "No Warranty"
         case .beta:     return "Developer Beta"
@@ -115,7 +115,7 @@ struct OnboardingView: View {
 
                     if p == .welcome {
                         HStack(alignment: .firstTextBaseline, spacing: 10) {
-                            Text("VESCDash")
+                            Text("Dynetra")
                                 .font(.system(size: 40, weight: .black, design: .rounded))
                                 .foregroundStyle(.white)
                             Text("BETA")
@@ -227,7 +227,7 @@ THIS APPLICATION IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
     private var betaBody: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("You are running a developer sideload of VESCDash — a pre-release build distributed outside the App Store.")
+            Text("You are running a developer sideload of Dynetra — a pre-release build distributed outside the App Store.")
                 .font(.body)
                 .foregroundStyle(.white.opacity(0.85))
                 .lineSpacing(4)

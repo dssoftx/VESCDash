@@ -28,8 +28,9 @@ targets:
     info:
       path: VESCDashboard/Info.plist
       properties:
-        NSBluetoothAlwaysUsageDescription: "VESCDashboard uses Bluetooth to connect to your VESC motor controller and display real-time telemetry data."
-        NSBluetoothPeripheralUsageDescription: "VESCDashboard uses Bluetooth to connect to your VESC motor controller."
+        CFBundleDisplayName: "Dynetra"
+        NSBluetoothAlwaysUsageDescription: "Dynetra uses Bluetooth to connect to your VESC motor controller and display real-time telemetry data."
+        NSBluetoothPeripheralUsageDescription: "Dynetra uses Bluetooth to connect to your VESC motor controller."
         UILaunchScreen:
           UIColorName: ""
         UIRequiredDeviceCapabilities:
