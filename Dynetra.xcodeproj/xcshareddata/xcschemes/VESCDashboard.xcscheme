@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1600"
-   version = "1.7">
+   LastUpgradeVersion = "2650"
+   version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES"
-      runPostActionsOnFailure = "NO">
+      buildImplicitDependencies = "YES">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -16,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CA2AD69E58CEC061471DFC5B"
-               BuildableName = "VESCDashboard.app"
-               BlueprintName = "VESCDashboard"
-               ReferencedContainer = "container:VESCDashboard.xcodeproj">
+               BuildableName = "Dynetra.app"
+               BlueprintName = "Dynetra"
+               ReferencedContainer = "container:Dynetra.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -28,15 +27,14 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
-      codeCoverageEnabled = "YES"
-      onlyGenerateCoverageForSpecifiedTargets = "NO">
+      codeCoverageEnabled = "YES">
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CA2AD69E58CEC061471DFC5B"
-            BuildableName = "VESCDashboard.app"
-            BlueprintName = "VESCDashboard"
-            ReferencedContainer = "container:VESCDashboard.xcodeproj">
+            BuildableName = "Dynetra.app"
+            BlueprintName = "Dynetra"
+            ReferencedContainer = "container:Dynetra.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -46,14 +44,12 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A5225575820D42D35D1316DA"
-               BuildableName = "VESCDashboardTests.xctest"
-               BlueprintName = "VESCDashboardTests"
-               ReferencedContainer = "container:VESCDashboard.xcodeproj">
+               BuildableName = "DynetraTests.xctest"
+               BlueprintName = "DynetraTests"
+               ReferencedContainer = "container:Dynetra.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -70,13 +66,11 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CA2AD69E58CEC061471DFC5B"
-            BuildableName = "VESCDashboard.app"
-            BlueprintName = "VESCDashboard"
-            ReferencedContainer = "container:VESCDashboard.xcodeproj">
+            BuildableName = "Dynetra.app"
+            BlueprintName = "Dynetra"
+            ReferencedContainer = "container:Dynetra.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -89,19 +83,18 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CA2AD69E58CEC061471DFC5B"
-            BuildableName = "VESCDashboard.app"
-            BlueprintName = "VESCDashboard"
-            ReferencedContainer = "container:VESCDashboard.xcodeproj">
+            BuildableName = "Dynetra.app"
+            BlueprintName = "Dynetra"
+            ReferencedContainer = "container:Dynetra.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
    </AnalyzeAction>
    <ArchiveAction
       buildConfiguration = "Release"
+      customArchiveName = "Dynetra"
       revealArchiveInOrganizer = "YES">
    </ArchiveAction>
 </Scheme>

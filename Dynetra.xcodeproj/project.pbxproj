@@ -14,6 +14,7 @@
 		3BE342FF2A4A9D8ED2E31174 /* VESCProtocolParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D6B281BE38F8FB96688757 /* VESCProtocolParser.swift */; };
 		4E796C12AC23D385C88E2D74 /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1662D4E18C8B369A94633196 /* MetricCard.swift */; };
 		51258DB267BA740B72991CC0 /* BLEDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE89CC0CB0C010CA590C7D4A /* BLEDevice.swift */; };
+		65C508A92FBCE18C00156EAB /* Dynetra.icon in Sources */ = {isa = PBXBuildFile; fileRef = 65C508A72FBCDFAE00156EAB /* Dynetra.icon */; };
 		72B372C99B6733750517F0FF /* CANNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB34049FAA0C6AE0D43852B /* CANNode.swift */; };
 		745074AFA04B126B2833DF1E /* VESCDashboardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0C9F4C6DC173512DE83460 /* VESCDashboardApp.swift */; };
 		7514212435CE9A68EF40BC5B /* LogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791D0E055BDFECEED14CEB51 /* LogView.swift */; };
@@ -46,14 +47,15 @@
 		1662D4E18C8B369A94633196 /* MetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCard.swift; sourceTree = "<group>"; };
 		16788C55DE853B7757C8F55A /* TelemetryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryViewModel.swift; sourceTree = "<group>"; };
 		52DEE15D360D611BCD50BD9A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		5D7858CF65BA996310B0F7EC /* VESCDashboardTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VESCDashboardTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5D7858CF65BA996310B0F7EC /* DynetraTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DynetraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		62D6B281BE38F8FB96688757 /* VESCProtocolParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VESCProtocolParser.swift; sourceTree = "<group>"; };
+		65C508A72FBCDFAE00156EAB /* Dynetra.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Dynetra.icon; sourceTree = "<group>"; };
 		7824338E4581121E83E51F7B /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		791D0E055BDFECEED14CEB51 /* LogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogView.swift; sourceTree = "<group>"; };
 		7A7097D51626E63D330B6B02 /* DeviceScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceScanView.swift; sourceTree = "<group>"; };
 		7B1E648F3EC74A4A8519AF85 /* MockVESCSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockVESCSimulator.swift; sourceTree = "<group>"; };
 		81495CD2D6C9CACA3D9BEE9B /* MotorConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorConfigView.swift; sourceTree = "<group>"; };
-		9D791A7695E4CE6D73FA5DFE /* VESCDashboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VESCDashboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9D791A7695E4CE6D73FA5DFE /* Dynetra.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dynetra.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3D4E5F6012345678901 /* MotorWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorWizardView.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60123456789012 /* MotorProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorProfileView.swift; sourceTree = "<group>"; };
 		B6F93404B5BE442CCB2B3190 /* TelemetryData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryData.swift; sourceTree = "<group>"; };
@@ -102,10 +104,26 @@
 		5EC8595EB025659CD48A5AD0 = {
 			isa = PBXGroup;
 			children = (
+				65C508A82FBCDFBD00156EAB /* Icon */,
 				66FC31676EABD3220D743A29 /* VESCDashboard */,
 				D190A3C3FDEB8527CB3999DA /* VESCDashboardTests */,
 				81DBB643B81198E12F4F1D59 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		65C5089A2FBCD89700156EAB /* Assets */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Assets;
+			sourceTree = "<group>";
+		};
+		65C508A82FBCDFBD00156EAB /* Icon */ = {
+			isa = PBXGroup;
+			children = (
+				65C508A72FBCDFAE00156EAB /* Dynetra.icon */,
+			);
+			path = Icon;
 			sourceTree = "<group>";
 		};
 		66FC31676EABD3220D743A29 /* VESCDashboard */ = {
@@ -151,8 +169,8 @@
 		81DBB643B81198E12F4F1D59 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9D791A7695E4CE6D73FA5DFE /* VESCDashboard.app */,
-				5D7858CF65BA996310B0F7EC /* VESCDashboardTests.xctest */,
+				9D791A7695E4CE6D73FA5DFE /* Dynetra.app */,
+				5D7858CF65BA996310B0F7EC /* DynetraTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -170,6 +188,7 @@
 			isa = PBXGroup;
 			children = (
 				DE94DA994F5C1AE16A0736AE /* VESCProtocolTests.swift */,
+				65C5089A2FBCD89700156EAB /* Assets */,
 			);
 			path = VESCDashboardTests;
 			sourceTree = "<group>";
@@ -177,9 +196,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A5225575820D42D35D1316DA /* VESCDashboardTests */ = {
+		A5225575820D42D35D1316DA /* DynetraTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3F7C6C0E11AC6307142361EA /* Build configuration list for PBXNativeTarget "VESCDashboardTests" */;
+			buildConfigurationList = 3F7C6C0E11AC6307142361EA /* Build configuration list for PBXNativeTarget "DynetraTests" */;
 			buildPhases = (
 				7287ECBAF1015C10C2A8AD86 /* Sources */,
 			);
@@ -188,16 +207,16 @@
 			dependencies = (
 				22F6A9345EC6209C10862E3D /* PBXTargetDependency */,
 			);
-			name = VESCDashboardTests;
+			name = DynetraTests;
 			packageProductDependencies = (
 			);
 			productName = VESCDashboardTests;
-			productReference = 5D7858CF65BA996310B0F7EC /* VESCDashboardTests.xctest */;
+			productReference = 5D7858CF65BA996310B0F7EC /* DynetraTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		CA2AD69E58CEC061471DFC5B /* VESCDashboard */ = {
+		CA2AD69E58CEC061471DFC5B /* Dynetra */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AEAB8F5E40F9CD69BBA3C1E9 /* Build configuration list for PBXNativeTarget "VESCDashboard" */;
+			buildConfigurationList = AEAB8F5E40F9CD69BBA3C1E9 /* Build configuration list for PBXNativeTarget "Dynetra" */;
 			buildPhases = (
 				2E2E5730741CA6D38641024F /* Sources */,
 			);
@@ -205,11 +224,11 @@
 			);
 			dependencies = (
 			);
-			name = VESCDashboard;
+			name = Dynetra;
 			packageProductDependencies = (
 			);
 			productName = VESCDashboard;
-			productReference = 9D791A7695E4CE6D73FA5DFE /* VESCDashboard.app */;
+			productReference = 9D791A7695E4CE6D73FA5DFE /* Dynetra.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -219,14 +238,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					CA2AD69E58CEC061471DFC5B = {
 						ProvisioningStyle = Automatic;
 					};
 				};
 			};
-			buildConfigurationList = 4DA4417C5EE63730AEE8A029 /* Build configuration list for PBXProject "VESCDashboard" */;
+			buildConfigurationList = 4DA4417C5EE63730AEE8A029 /* Build configuration list for PBXProject "Dynetra" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -240,8 +259,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				CA2AD69E58CEC061471DFC5B /* VESCDashboard */,
-				A5225575820D42D35D1316DA /* VESCDashboardTests */,
+				CA2AD69E58CEC061471DFC5B /* Dynetra */,
+				A5225575820D42D35D1316DA /* DynetraTests */,
 			);
 		};
 /* End PBXProject section */
@@ -251,6 +270,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				65C508A92FBCE18C00156EAB /* Dynetra.icon in Sources */,
 				51258DB267BA740B72991CC0 /* BLEDevice.swift in Sources */,
 				24779A8F5B51F900063CDA50 /* BLEManager.swift in Sources */,
 				72B372C99B6733750517F0FF /* CANNode.swift in Sources */,
@@ -289,7 +309,7 @@
 /* Begin PBXTargetDependency section */
 		22F6A9345EC6209C10862E3D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = CA2AD69E58CEC061471DFC5B /* VESCDashboard */;
+			target = CA2AD69E58CEC061471DFC5B /* Dynetra */;
 			targetProxy = F69D2B2222146A464F227959 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -298,19 +318,20 @@
 		0B60965A1B6E3C322A797EB6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Dynetra;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = L4JRJYD82L;
 				INFOPLIST_FILE = VESCDashboard/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Dynetra;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.dynetra.dynetra;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dssoft.dynetra;
+				PRODUCT_NAME = Dynetra;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -321,6 +342,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -353,9 +375,11 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = L4JRJYD82L;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -370,6 +394,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
@@ -389,28 +414,30 @@
 					"@loader_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.vescdash.VESCDashboardTests;
+				PRODUCT_NAME = DynetraTests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VESCDashboard.app/VESCDashboard";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dynetra.app/Dynetra";
 			};
 			name = Debug;
 		};
 		75C3AE3893D0289EDBCEBE11 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Dynetra;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = L4JRJYD82L;
 				INFOPLIST_FILE = VESCDashboard/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Dynetra;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.dynetra.dynetra;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dssoft.dynetra;
+				PRODUCT_NAME = Dynetra;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -429,9 +456,10 @@
 					"@loader_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.vescdash.VESCDashboardTests;
+				PRODUCT_NAME = DynetraTests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VESCDashboard.app/VESCDashboard";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dynetra.app/Dynetra";
 			};
 			name = Release;
 		};
@@ -439,6 +467,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -471,9 +500,11 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = L4JRJYD82L;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -495,6 +526,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.9;
@@ -505,7 +537,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		3F7C6C0E11AC6307142361EA /* Build configuration list for PBXNativeTarget "VESCDashboardTests" */ = {
+		3F7C6C0E11AC6307142361EA /* Build configuration list for PBXNativeTarget "DynetraTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				10FA9E76957FD25362D8B7AA /* Debug */,
@@ -514,7 +546,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		4DA4417C5EE63730AEE8A029 /* Build configuration list for PBXProject "VESCDashboard" */ = {
+		4DA4417C5EE63730AEE8A029 /* Build configuration list for PBXProject "Dynetra" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A5FE770EA98E40C9FF8870C3 /* Debug */,
@@ -523,7 +555,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		AEAB8F5E40F9CD69BBA3C1E9 /* Build configuration list for PBXNativeTarget "VESCDashboard" */ = {
+		AEAB8F5E40F9CD69BBA3C1E9 /* Build configuration list for PBXNativeTarget "Dynetra" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75C3AE3893D0289EDBCEBE11 /* Debug */,
