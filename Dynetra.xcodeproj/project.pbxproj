@@ -14,7 +14,7 @@
 		3BE342FF2A4A9D8ED2E31174 /* VESCProtocolParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D6B281BE38F8FB96688757 /* VESCProtocolParser.swift */; };
 		4E796C12AC23D385C88E2D74 /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1662D4E18C8B369A94633196 /* MetricCard.swift */; };
 		51258DB267BA740B72991CC0 /* BLEDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE89CC0CB0C010CA590C7D4A /* BLEDevice.swift */; };
-		65C508A92FBCE18C00156EAB /* Dynetra.icon in Sources */ = {isa = PBXBuildFile; fileRef = 65C508A72FBCDFAE00156EAB /* Dynetra.icon */; };
+		65C508AA2FBCE4E700156EAB /* Dynetra.icon in Sources */ = {isa = PBXBuildFile; fileRef = 65C508A72FBCDFAE00156EAB /* Dynetra.icon */; };
 		72B372C99B6733750517F0FF /* CANNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB34049FAA0C6AE0D43852B /* CANNode.swift */; };
 		745074AFA04B126B2833DF1E /* VESCDashboardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0C9F4C6DC173512DE83460 /* VESCDashboardApp.swift */; };
 		7514212435CE9A68EF40BC5B /* LogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791D0E055BDFECEED14CEB51 /* LogView.swift */; };
@@ -270,7 +270,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				65C508A92FBCE18C00156EAB /* Dynetra.icon in Sources */,
+				65C508AA2FBCE4E700156EAB /* Dynetra.icon in Sources */,
 				51258DB267BA740B72991CC0 /* BLEDevice.swift in Sources */,
 				24779A8F5B51F900063CDA50 /* BLEManager.swift in Sources */,
 				72B372C99B6733750517F0FF /* CANNode.swift in Sources */,
