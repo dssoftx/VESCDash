@@ -21,15 +21,15 @@
 		8AF0792685B5D23997D8C3B3 /* MockVESCSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1E648F3EC74A4A8519AF85 /* MockVESCSimulator.swift */; };
 		8EF359F8B2FD023A9E25D2D2 /* MotorConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81495CD2D6C9CACA3D9BEE9B /* MotorConfigView.swift */; };
 		A1B2C3D4E5F601234567890A /* MotorWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6012345678901 /* MotorWizardView.swift */; };
+		A82B11483A61FB04B020FF6E /* DeviceScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A7097D51626E63D330B6B02 /* DeviceScanView.swift */; };
 		B2C3D4E5F601234567890AB1 /* MotorProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60123456789012 /* MotorProfileView.swift */; };
 		C3D4E5F690AB01234567890A /* MotorProfileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F690AB012345678901 /* MotorProfileListView.swift */; };
-		D4E5F6A7B8C901234567890A /* UISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9012345678901 /* UISettingsView.swift */; };
-		E6F7A8B9C0D101234567890A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6F7A8B9C0D1012345678901 /* OnboardingView.swift */; };
-		F7A8B9C0D1E201234567890A /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A8B9C0D1E2012345678901 /* LocationManager.swift */; };
-		A82B11483A61FB04B020FF6E /* DeviceScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A7097D51626E63D330B6B02 /* DeviceScanView.swift */; };
 		CC7CED3E6B7052E1BEABFD3E /* VESCProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE94DA994F5C1AE16A0736AE /* VESCProtocolTests.swift */; };
+		D4E5F6A7B8C901234567890A /* UISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9012345678901 /* UISettingsView.swift */; };
 		D6D29ECBC1C4D5156B9C9430 /* TelemetryData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F93404B5BE442CCB2B3190 /* TelemetryData.swift */; };
+		E6F7A8B9C0D101234567890A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6F7A8B9C0D1012345678901 /* OnboardingView.swift */; };
 		EFDCFA0987598A6216E56D03 /* MotorLimitsConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74C80345013F0FFCAD3EA34 /* MotorLimitsConfig.swift */; };
+		F7A8B9C0D1E201234567890A /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A8B9C0D1E2012345678901 /* LocationManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,21 +53,21 @@
 		7A7097D51626E63D330B6B02 /* DeviceScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceScanView.swift; sourceTree = "<group>"; };
 		7B1E648F3EC74A4A8519AF85 /* MockVESCSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockVESCSimulator.swift; sourceTree = "<group>"; };
 		81495CD2D6C9CACA3D9BEE9B /* MotorConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorConfigView.swift; sourceTree = "<group>"; };
+		9D791A7695E4CE6D73FA5DFE /* VESCDashboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VESCDashboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3D4E5F6012345678901 /* MotorWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorWizardView.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60123456789012 /* MotorProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorProfileView.swift; sourceTree = "<group>"; };
-		C3D4E5F690AB012345678901 /* MotorProfileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorProfileListView.swift; sourceTree = "<group>"; };
-		D4E5F6A7B8C9012345678901 /* UISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UISettingsView.swift; sourceTree = "<group>"; };
-		E6F7A8B9C0D1012345678901 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
-		F7A8B9C0D1E2012345678901 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
-		9D791A7695E4CE6D73FA5DFE /* VESCDashboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VESCDashboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B6F93404B5BE442CCB2B3190 /* TelemetryData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryData.swift; sourceTree = "<group>"; };
 		BE0C9F4C6DC173512DE83460 /* VESCDashboardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VESCDashboardApp.swift; sourceTree = "<group>"; };
+		C3D4E5F690AB012345678901 /* MotorProfileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorProfileListView.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C9012345678901 /* UISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UISettingsView.swift; sourceTree = "<group>"; };
 		DE94DA994F5C1AE16A0736AE /* VESCProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VESCProtocolTests.swift; sourceTree = "<group>"; };
 		DEB34049FAA0C6AE0D43852B /* CANNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CANNode.swift; sourceTree = "<group>"; };
 		E47D5B1E5DFCA64CE8A18F39 /* BLEManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEManager.swift; sourceTree = "<group>"; };
 		E6A7D9CF59FE19448E53122E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		E6F7A8B9C0D1012345678901 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		E74C80345013F0FFCAD3EA34 /* MotorLimitsConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorLimitsConfig.swift; sourceTree = "<group>"; };
 		EE89CC0CB0C010CA590C7D4A /* BLEDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEDevice.swift; sourceTree = "<group>"; };
+		F7A8B9C0D1E2012345678901 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -303,11 +303,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = L4JRJYD82L;
 				INFOPLIST_FILE = VESCDashboard/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Dynetra;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.vescdash.VESCDashboard;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dynetra.dynetra;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -400,11 +403,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = L4JRJYD82L;
 				INFOPLIST_FILE = VESCDashboard/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Dynetra;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.vescdash.VESCDashboard;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dynetra.dynetra;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";

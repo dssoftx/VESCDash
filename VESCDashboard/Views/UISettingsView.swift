@@ -56,6 +56,18 @@ struct UISettingsView: View {
                     Text("Shows phone GPS speed under the VESC speed gauge. Useful for verifying accuracy on high-speed runs. Requires location permission.")
                         .font(.caption)
                 }
+
+                Section {
+                    Toggle(isOn: Binding(
+                        get: { vm.uiSettings.showMotorDetection },
+                        set: { vm.uiSettings.showMotorDetection = $0; vm.saveUISettings() }
+                    )) {
+                        Label("Experimental Motor Detection", systemImage: "wand.and.stars")
+                    }
+                } footer: {
+                    Text("Enables the Motor Wizard in the menu. Detection is experimental and may write incorrect values — only use on a secured, stationary motor with no load attached.")
+                        .font(.caption)
+                }
             }
             .navigationTitle("UI Settings")
             .navigationBarTitleDisplayMode(.inline)

@@ -56,8 +56,10 @@ struct DashboardView: View {
                         Button { showLog = true } label: {
                             Label("Log", systemImage: "list.bullet.rectangle")
                         }
-                        Button { showMotorWizard = true } label: {
-                            Label("Motor Wizard", systemImage: "wand.and.stars")
+                        if ui.showMotorDetection {
+                            Button { showMotorWizard = true } label: {
+                                Label("Motor Wizard", systemImage: "wand.and.stars")
+                            }
                         }
                         Button { showMotorProfile = true } label: {
                             Label("Profile", systemImage: "slider.horizontal.3")

@@ -56,6 +56,7 @@ struct UISettings: Codable {
     var reduceStatisticsAnimations: Bool = false
     var lightMode: Bool = false
     var showGPSSpeed: Bool = false
+    var showMotorDetection: Bool = false
 }
 
 final class TelemetryViewModel: ObservableObject {
