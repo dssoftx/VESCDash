@@ -79,7 +79,7 @@ enum VESCProtocolParser {
     //
     // To add a new firmware version: verify its parameters_mcconf.xml SerOrder matches the
     // offsets in this file (or add a new isFWxxx branch), then append the version number here.
-    static let allowedFirmwareVersions: Set<Int> = [605, 606]
+    static let allowedFirmwareVersions: Set<Int> = [605, 606, 700]
 
     // MARK: - CRC-CCITT
 
@@ -426,23 +426,29 @@ enum VESCProtocolParser {
     //   foc_motor_flux_linkage [170-173] float32 BE (Wb)
     //   foc_observer_gain   [174-177]  float32 BE (raw × 1e6)
     //
-    //   Fields that shift between firmware versions (FW 6.06 adds 4 fields after foc_observer_type):
-    //                         FW 6.05   FW 6.06
-    //   foc_fw_current_max    [307-310] [311-314]  float32 BE (A)
-    //   foc_fw_duty_start     [311-312] [315-316]  int16/10000
-    //   si_motor_poles        [442]     [448]      uint8
-    //   si_gear_ratio         [443-446] [449-452]  float32 BE
-    //   si_wheel_diameter     [447-450] [453-456]  float32 BE (metres)
+    //   Fields that shift between firmware versions:
+    //                         FW 6.05   FW 6.06   FW 7.00
+    //   foc_fw_current_max    [307-310] [311-314] [311-314]  float32 BE (A)
+    //   foc_fw_duty_start     [311-312] [315-316] [315-316]  int16/10000
+    //   si_motor_poles        [442]     [448]     [452]      uint8
+    //   si_gear_ratio         [443-446] [449-452] [453-456]  float32 BE
+    //   si_wheel_diameter     [447-450] [453-456] [457-460]  float32 BE (metres)
     //
-    //   Detection: payload.count >= 484 → FW 6.06; otherwise FW 6.05 (payload = 478 B)
+    //   FW 7.00 adds foc_fw_backoff (int16) + foc_mag_vd_max (int16) before the SI params,
+    //   shifting them +4 bytes. foc_fw_current_max/duty_start are unaffected (inserted after).
+    //
+    //   Detection: payload.count >= 488 → FW 7.00
+    //              payload.count >= 484 → FW 6.06
+    //              otherwise            → FW 6.05 (payload = 478 B)
 
+    private static func isFW700(_ payload: [UInt8]) -> Bool { payload.count >= 488 }
     private static func isFW606(_ payload: [UInt8]) -> Bool { payload.count >= 484 }
 
     /// Reads drivetrain SI params from a raw COMM_GET_MCCONF payload.
     /// Returns nil if the payload is too short OR if the values are outside plausible hardware
     /// ranges — this catches firmware layout changes where the offsets no longer match.
     static func readDrivetrainFromMCConf(payload: [UInt8]) -> (poles: Int, gearRatio: Float, wheelDiameterM: Float)? {
-        let polesOff = isFW606(payload) ? 448 : 442
+        let polesOff = isFW700(payload) ? 452 : isFW606(payload) ? 448 : 442
         guard payload.count >= polesOff + 9 else { return nil }
         let poles     = Int(payload[polesOff])
         let gearRatio = float32BEAt(payload, polesOff + 1)
@@ -495,7 +501,7 @@ enum VESCProtocolParser {
             setFloat32BE(&p, 170, lambda_Wb)
             setFloat32BE(&p, 174, obsgain)
         }
-        let polesOff = isFW606(p) ? 448 : 442
+        let polesOff = isFW700(p) ? 452 : isFW606(p) ? 448 : 442
         if p.count >= polesOff + 9 {
             p[polesOff] = UInt8(max(2, min(254, siMotorPoles)))
             setFloat32BE(&p, polesOff + 1, siGearRatio)
