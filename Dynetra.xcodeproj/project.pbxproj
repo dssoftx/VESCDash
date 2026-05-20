@@ -15,6 +15,7 @@
 		4E796C12AC23D385C88E2D74 /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1662D4E18C8B369A94633196 /* MetricCard.swift */; };
 		51258DB267BA740B72991CC0 /* BLEDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE89CC0CB0C010CA590C7D4A /* BLEDevice.swift */; };
 		65C508AA2FBCE4E700156EAB /* Dynetra.icon in Sources */ = {isa = PBXBuildFile; fileRef = 65C508A72FBCDFAE00156EAB /* Dynetra.icon */; };
+		65FA1DF82FBE31A100A57444 /* TireSizeCorrectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65FA1DF72FBE31A100A57444 /* TireSizeCorrectionView.swift */; };
 		72B372C99B6733750517F0FF /* CANNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB34049FAA0C6AE0D43852B /* CANNode.swift */; };
 		745074AFA04B126B2833DF1E /* VESCDashboardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0C9F4C6DC173512DE83460 /* VESCDashboardApp.swift */; };
 		7514212435CE9A68EF40BC5B /* LogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791D0E055BDFECEED14CEB51 /* LogView.swift */; };
@@ -50,6 +51,7 @@
 		5D7858CF65BA996310B0F7EC /* DynetraTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DynetraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		62D6B281BE38F8FB96688757 /* VESCProtocolParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VESCProtocolParser.swift; sourceTree = "<group>"; };
 		65C508A72FBCDFAE00156EAB /* Dynetra.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Dynetra.icon; sourceTree = "<group>"; };
+		65FA1DF72FBE31A100A57444 /* TireSizeCorrectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TireSizeCorrectionView.swift; sourceTree = "<group>"; };
 		7824338E4581121E83E51F7B /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		791D0E055BDFECEED14CEB51 /* LogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogView.swift; sourceTree = "<group>"; };
 		7A7097D51626E63D330B6B02 /* DeviceScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceScanView.swift; sourceTree = "<group>"; };
@@ -162,6 +164,7 @@
 				E6A7D9CF59FE19448E53122E /* SettingsView.swift */,
 				D4E5F6A7B8C9012345678901 /* UISettingsView.swift */,
 				E6F7A8B9C0D1012345678901 /* OnboardingView.swift */,
+				65FA1DF72FBE31A100A57444 /* TireSizeCorrectionView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -287,6 +290,7 @@
 				EFDCFA0987598A6216E56D03 /* MotorLimitsConfig.swift in Sources */,
 				8654F6946557E7FEE0503537 /* SettingsView.swift in Sources */,
 				D4E5F6A7B8C901234567890A /* UISettingsView.swift in Sources */,
+				65FA1DF82FBE31A100A57444 /* TireSizeCorrectionView.swift in Sources */,
 				E6F7A8B9C0D101234567890A /* OnboardingView.swift in Sources */,
 				F7A8B9C0D1E201234567890A /* LocationManager.swift in Sources */,
 				D6D29ECBC1C4D5156B9C9430 /* TelemetryData.swift in Sources */,

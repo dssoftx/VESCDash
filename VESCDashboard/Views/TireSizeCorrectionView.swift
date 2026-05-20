@@ -192,7 +192,7 @@ struct TireSizeCorrectionView: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(String(format: "%.1f mm", suggested))
                         .font(.system(.body, design: .rounded).weight(.semibold))
-                        .foregroundStyle(.dynetraOrange)
+                        .foregroundStyle(Color.dynetraOrange)
                     Text(String(format: "%+.1f mm (%+.1f%%)", deltaMM, deltaPct))
                         .font(.caption)
                         .foregroundStyle(.secondary)
