@@ -9,6 +9,7 @@ struct DashboardView: View {
     @State private var showScan = false
     @State private var showMotorWizard = false
     @State private var showUISettings = false
+    @State private var showTireCorrection = false
 
     private var t: TelemetryData { vm.telemetry }
     private var ui: UISettings { vm.uiSettings }
@@ -78,6 +79,9 @@ struct DashboardView: View {
                         Button { showSettings = true } label: {
                             Label("Settings", systemImage: "gearshape")
                         }
+                        Button { showTireCorrection = true } label: {
+                            Label("Tire Size Correction", systemImage: "arrow.triangle.2.circlepath")
+                        }
                         Button { showUISettings = true } label: {
                             Label("UI Settings", systemImage: "paintbrush")
                         }
@@ -106,6 +110,9 @@ struct DashboardView: View {
             }
             .sheet(isPresented: $showUISettings) {
                 UISettingsView(vm: vm)
+            }
+            .sheet(isPresented: $showTireCorrection) {
+                TireSizeCorrectionView(vm: vm)
             }
         }
         .preferredColorScheme(ui.lightMode ? .light : .dark)

@@ -444,6 +444,18 @@ enum VESCProtocolParser {
     private static func isFW700(_ payload: [UInt8]) -> Bool { payload.count >= 488 }
     private static func isFW606(_ payload: [UInt8]) -> Bool { payload.count >= 484 }
 
+    /// Patches only si_wheel_diameter in a COMM_GET_MCCONF payload.
+    /// Does not touch gear ratio, pole count, or any other field.
+    /// Returns false if the payload is too short to contain the field.
+    @discardableResult
+    static func patchWheelDiameter(in payload: inout [UInt8], diameterM: Float) -> Bool {
+        let polesOff = isFW700(payload) ? 452 : isFW606(payload) ? 448 : 442
+        let wheelOff = polesOff + 5   // 1 byte (poles) + 4 bytes (gear_ratio float32)
+        guard payload.count >= wheelOff + 4 else { return false }
+        setFloat32BE(&payload, wheelOff, diameterM)
+        return true
+    }
+
     /// Reads drivetrain SI params from a raw COMM_GET_MCCONF payload.
     /// Returns nil if the payload is too short OR if the values are outside plausible hardware
     /// ranges — this catches firmware layout changes where the offsets no longer match.

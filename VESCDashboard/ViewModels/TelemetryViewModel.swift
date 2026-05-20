@@ -424,6 +424,41 @@ final class TelemetryViewModel: ObservableObject {
         return (dt.poles, dt.gearRatio, dt.wheelDiameterM * 1000.0)
     }
 
+    /// Patches only si_wheel_diameter in the MCCONF cache and sends COMM_SET_MCCONF.
+    /// Always updates local DrivetrainSettings. Gear ratio and all other fields are untouched.
+    /// Returns (success, message) for UI feedback.
+    @discardableResult
+    func applyWheelDiameterCorrection(diameterMM: Float) -> (success: Bool, message: String) {
+        settings.wheelDiameterMM = Double(diameterMM)
+        saveSettings()
+
+        guard isConnected else {
+            return (false, "Not connected — diameter saved locally only")
+        }
+        guard !fwMCConfBlocked else {
+            return (false, "Firmware \(localFWVersion ?? "unknown") not supported — saved locally only")
+        }
+
+        var cache: [UInt8]? = selectedCANID.map { rawMCConfByCANID[$0] } ?? rawMCConfLocal
+        guard cache != nil else {
+            return (false, "Read motor config first — diameter saved locally only")
+        }
+
+        guard VESCProtocolParser.patchWheelDiameter(in: &cache!, diameterM: diameterMM / 1000.0) else {
+            return (false, "Payload too short — diameter saved locally only")
+        }
+
+        var writePayload = cache!
+        writePayload[0] = VESCCommand.setMCConf.rawValue
+        sendCommand(writePayload)
+
+        if let id = selectedCANID { rawMCConfByCANID[id] = cache! }
+        else { rawMCConfLocal = cache! }
+
+        appendLog("[TIRE] Wheel diameter corrected to \(String(format: "%.1f", diameterMM)) mm — written to VESC flash")
+        return (true, "\(String(format: "%.1f", diameterMM)) mm written to VESC")
+    }
+
     /// Applies `profile` to every connected VESC.
     ///
     /// - `storeToFlash = true`:  patches each cached MCCONF and sends COMM_SET_MCCONF (full
