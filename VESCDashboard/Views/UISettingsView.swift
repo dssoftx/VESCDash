@@ -59,6 +59,18 @@ struct UISettingsView: View {
 
                 Section {
                     Toggle(isOn: Binding(
+                        get: { vm.uiSettings.runVerificationMode },
+                        set: { vm.uiSettings.runVerificationMode = $0; vm.saveUISettings() }
+                    )) {
+                        Label("Run Verification", systemImage: "location.circle.fill")
+                    }
+                } footer: {
+                    Text("Swaps the main speed display to GPS speed so you can verify VESC accuracy at speed. A green arrow appears over the number. Requires GPS Speed Overlay to be enabled.")
+                        .font(.caption)
+                }
+
+                Section {
+                    Toggle(isOn: Binding(
                         get: { vm.uiSettings.showMotorDetection },
                         set: { vm.uiSettings.showMotorDetection = $0; vm.saveUISettings() }
                     )) {

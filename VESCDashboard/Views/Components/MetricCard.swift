@@ -1,5 +1,9 @@
 import SwiftUI
 
+extension Color {
+    static let dynetraOrange = Color(red: 206/255, green: 95/255, blue: 14/255)
+}
+
 struct MetricCard: View {
     let label: String
     let value: String
@@ -49,7 +53,7 @@ struct MetricCard: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(isWarning ? Color.red.opacity(0.6) : accentColor.opacity(lightMode ? 0.4 : 0.15), lineWidth: 1)
+                .strokeBorder(isWarning ? Color.red.opacity(0.6) : Color.dynetraOrange.opacity(lightMode ? 0.55 : 0.4), lineWidth: 1)
         )
     }
 }
@@ -61,6 +65,7 @@ struct BarMetricCard: View {
     var accentColor: Color = .cyan
     var icon: String? = nil
     var animated: Bool = true
+    var animateBar: Bool = true
     var lightMode: Bool = false
 
     var body: some View {
@@ -90,7 +95,7 @@ struct BarMetricCard: View {
                     Capsule()
                         .fill(barColor)
                         .frame(width: geo.size.width * CGFloat(max(0, min(1, abs(value)))), height: 8)
-                        .animation(animated ? .easeInOut(duration: 0.15) : nil, value: value)
+                        .animation(animateBar ? .easeInOut(duration: 0.15) : nil, value: value)
                 }
             }
             .frame(height: 8)
@@ -102,7 +107,7 @@ struct BarMetricCard: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(accentColor.opacity(lightMode ? 0.4 : 0.15), lineWidth: 1)
+                .strokeBorder(Color.dynetraOrange.opacity(lightMode ? 0.55 : 0.4), lineWidth: 1)
         )
     }
 

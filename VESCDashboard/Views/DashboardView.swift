@@ -17,6 +17,14 @@ struct DashboardView: View {
     private var displaySpeedKMH: Double {
         ui.suppressIdleAnomalies && abs(vm.speedKMH) < 1.0 ? 0.0 : vm.speedKMH
     }
+
+    private var verificationActive: Bool {
+        ui.runVerificationMode && ui.showGPSSpeed && vm.gpsSpeedKMH != nil
+    }
+
+    private var mainDisplaySpeed: Double {
+        verificationActive ? (vm.gpsSpeedKMH ?? displaySpeedKMH) : displaySpeedKMH
+    }
     private var displayDuty: Double {
         ui.suppressIdleAnomalies && abs(Double(t.dutyCycle)) < 0.01 ? 0.0 : Double(t.dutyCycle)
     }
@@ -114,8 +122,10 @@ struct DashboardView: View {
                 .rotationEffect(.degrees(90))
                 .frame(width: 220, height: 220)
 
-            let fraction = min(1.0, abs(displaySpeedKMH) / 60.0)
-            let fillColors: [Color] = ui.lightMode ? [Color(.systemGray2), Color(.systemGray3)] : [.cyan, .blue]
+            let fraction = min(1.0, abs(mainDisplaySpeed) / 60.0)
+            let fillColors: [Color] = ui.lightMode
+                ? [Color(.systemGray2), Color(.systemGray3)]
+                : [.dynetraOrange, Color(red: 0.92, green: 0.50, blue: 0.18)]
             Circle()
                 .trim(from: 0.15, to: 0.15 + 0.7 * fraction)
                 .stroke(
@@ -124,18 +134,26 @@ struct DashboardView: View {
                 )
                 .rotationEffect(.degrees(90))
                 .frame(width: 220, height: 220)
-                .animation(ui.reduceStatisticsAnimations ? nil : .easeInOut(duration: 0.15), value: fraction)
+                .animation(.easeInOut(duration: 0.15), value: fraction)
 
             VStack(spacing: 2) {
-                Text(String(format: "%.1f", displaySpeedKMH))
+                Text(String(format: "%.1f", mainDisplaySpeed))
                     .font(.system(size: 56, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
-                    .contentTransition(ui.reduceStatisticsAnimations ? .identity : .numericText(countsDown: displaySpeedKMH < 0))
-                    .animation(ui.reduceStatisticsAnimations ? nil : .easeInOut(duration: 0.15), value: displaySpeedKMH)
+                    .contentTransition(ui.reduceStatisticsAnimations ? .identity : .numericText(countsDown: mainDisplaySpeed < 0))
+                    .animation(ui.reduceStatisticsAnimations ? nil : .easeInOut(duration: 0.15), value: mainDisplaySpeed)
+                    .overlay(alignment: .topTrailing) {
+                        if verificationActive {
+                            Image(systemName: "arrow.up.forward.circle.fill")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.green)
+                                .offset(x: 12, y: -4)
+                        }
+                    }
 
-                Text("km/h")
+                Text(verificationActive ? "GPS km/h" : "km/h")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(verificationActive ? .green : .secondary)
 
                 Text("\(displayRPM) ERPM")
                     .font(.caption2)
@@ -143,7 +161,19 @@ struct DashboardView: View {
                     .contentTransition(ui.reduceStatisticsAnimations ? .identity : .numericText())
                     .animation(ui.reduceStatisticsAnimations ? nil : .easeInOut(duration: 0.15), value: displayRPM)
 
-                if ui.showGPSSpeed {
+                if verificationActive {
+                    HStack(spacing: 3) {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 9))
+                        Text(String(format: "%.1f", displaySpeedKMH))
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .contentTransition(ui.reduceStatisticsAnimations ? .identity : .numericText())
+                            .animation(ui.reduceStatisticsAnimations ? nil : .easeInOut(duration: 0.15), value: displaySpeedKMH)
+                        Text("VESC")
+                            .font(.system(size: 10))
+                    }
+                    .foregroundStyle(.secondary)
+                } else if ui.showGPSSpeed {
                     gpsSpeedBadge
                 }
             }
