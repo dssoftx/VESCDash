@@ -8,3 +8,5 @@ DerivedData/
 *.dSYM
 Pods/
 .swiftpm/
+vesctool/
+vesc_tool7/

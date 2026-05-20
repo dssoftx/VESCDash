@@ -1,0 +1,86 @@
+{
+  "fill" : {
+    "automatic-gradient" : "display-p3:0.00000,0.00000,0.00000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "dynetra_arc 4.svg",
+          "name" : "dynetra_arc 4",
+          "position" : {
+            "scale" : 1.3,
+            "translation-in-points" : [
+              10.8460693359375,
+              264.1727472621211
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "dynetra_bolt_fixed.svg",
+          "name" : "dynetra_bolt_fixed",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -15,
+              332.22153257109176
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "dynetra_v3_centered.svg",
+          "name" : "dynetra_v3_centered",
+          "position" : {
+            "scale" : 1.5,
+            "translation-in-points" : [
+              0,
+              -39.7431640625
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}
