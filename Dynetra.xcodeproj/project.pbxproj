@@ -14,8 +14,10 @@
 		3BE342FF2A4A9D8ED2E31174 /* VESCProtocolParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D6B281BE38F8FB96688757 /* VESCProtocolParser.swift */; };
 		4E796C12AC23D385C88E2D74 /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1662D4E18C8B369A94633196 /* MetricCard.swift */; };
 		51258DB267BA740B72991CC0 /* BLEDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE89CC0CB0C010CA590C7D4A /* BLEDevice.swift */; };
+		657990812FBF88A500B10770 /* Dynetra.png in Sources */ = {isa = PBXBuildFile; fileRef = 657990802FBF889000B10770 /* Dynetra.png */; };
 		65C508AA2FBCE4E700156EAB /* Dynetra.icon in Sources */ = {isa = PBXBuildFile; fileRef = 65C508A72FBCDFAE00156EAB /* Dynetra.icon */; };
 		65FA1DF82FBE31A100A57444 /* TireSizeCorrectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65FA1DF72FBE31A100A57444 /* TireSizeCorrectionView.swift */; };
+		CF0001A2B3C4D5E6F7000002 /* Assets.xcassets in Sources */ = {isa = PBXBuildFile; fileRef = CF0001A2B3C4D5E6F7000001 /* Assets.xcassets */; };
 		72B372C99B6733750517F0FF /* CANNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB34049FAA0C6AE0D43852B /* CANNode.swift */; };
 		745074AFA04B126B2833DF1E /* VESCDashboardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0C9F4C6DC173512DE83460 /* VESCDashboardApp.swift */; };
 		7514212435CE9A68EF40BC5B /* LogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791D0E055BDFECEED14CEB51 /* LogView.swift */; };
@@ -50,8 +52,10 @@
 		52DEE15D360D611BCD50BD9A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		5D7858CF65BA996310B0F7EC /* DynetraTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DynetraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		62D6B281BE38F8FB96688757 /* VESCProtocolParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VESCProtocolParser.swift; sourceTree = "<group>"; };
+		657990802FBF889000B10770 /* Dynetra.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Dynetra.png; sourceTree = "<group>"; };
 		65C508A72FBCDFAE00156EAB /* Dynetra.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Dynetra.icon; sourceTree = "<group>"; };
 		65FA1DF72FBE31A100A57444 /* TireSizeCorrectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TireSizeCorrectionView.swift; sourceTree = "<group>"; };
+		CF0001A2B3C4D5E6F7000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7824338E4581121E83E51F7B /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		791D0E055BDFECEED14CEB51 /* LogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogView.swift; sourceTree = "<group>"; };
 		7A7097D51626E63D330B6B02 /* DeviceScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceScanView.swift; sourceTree = "<group>"; };
@@ -110,6 +114,7 @@
 				66FC31676EABD3220D743A29 /* VESCDashboard */,
 				D190A3C3FDEB8527CB3999DA /* VESCDashboardTests */,
 				81DBB643B81198E12F4F1D59 /* Products */,
+				657990802FBF889000B10770 /* Dynetra.png */,
 			);
 			sourceTree = "<group>";
 		};
@@ -131,6 +136,7 @@
 		66FC31676EABD3220D743A29 /* VESCDashboard */ = {
 			isa = PBXGroup;
 			children = (
+				CF0001A2B3C4D5E6F7000001 /* Assets.xcassets */,
 				A594BC7CE787B149C23CB973 /* BLE */,
 				0DC10E3870F3655746B9F3A8 /* Models */,
 				686488F3EB72EA472774C659 /* Protocol */,
@@ -273,6 +279,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CF0001A2B3C4D5E6F7000002 /* Assets.xcassets in Sources */,
+				657990812FBF88A500B10770 /* Dynetra.png in Sources */,
 				65C508AA2FBCE4E700156EAB /* Dynetra.icon in Sources */,
 				51258DB267BA740B72991CC0 /* BLEDevice.swift in Sources */,
 				24779A8F5B51F900063CDA50 /* BLEManager.swift in Sources */,

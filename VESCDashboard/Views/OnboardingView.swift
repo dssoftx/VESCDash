@@ -16,19 +16,10 @@ private enum OnboardingPage: Int, CaseIterable {
 
     var icon: String {
         switch self {
-        case .welcome:  return "bolt.circle.fill"
+        case .welcome:  return ""
         case .safety:   return "exclamationmark.triangle.fill"
         case .warranty: return "doc.text.fill"
         case .beta:     return "hammer.fill"
-        }
-    }
-
-    var iconColor: Color {
-        switch self {
-        case .welcome:  return .cyan
-        case .safety:   return .orange
-        case .warranty: return .blue
-        case .beta:     return .purple
         }
     }
 }
@@ -42,6 +33,8 @@ struct OnboardingView: View {
     @State private var ackWarranty = false
     @State private var ackBeta = false
     @State private var slideIn = false
+
+    private let accent = Color.dynetraOrange
 
     private var isLastPage: Bool { page == .beta }
     private var canAccept: Bool { ackWarranty && ackBeta }
@@ -77,13 +70,12 @@ struct OnboardingView: View {
         ZStack {
             Color.black.ignoresSafeArea()
             RadialGradient(
-                colors: [page.iconColor.opacity(0.18), .clear],
+                colors: [accent.opacity(0.15), .clear],
                 center: .top,
                 startRadius: 0,
                 endRadius: 500
             )
             .ignoresSafeArea()
-            .animation(.easeInOut(duration: 0.5), value: page)
         }
     }
 
@@ -93,7 +85,7 @@ struct OnboardingView: View {
         HStack(spacing: 8) {
             ForEach(OnboardingPage.allCases, id: \.self) { p in
                 Capsule()
-                    .fill(p == page ? page.iconColor : Color.white.opacity(0.2))
+                    .fill(p == page ? accent : Color.white.opacity(0.2))
                     .frame(width: p == page ? 24 : 8, height: 8)
                     .animation(.spring(response: 0.35), value: page)
             }
@@ -108,10 +100,19 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 28) {
                 // Icon + title
                 VStack(alignment: .leading, spacing: 12) {
-                    Image(systemName: p.icon)
-                        .font(.system(size: 56, weight: .semibold))
-                        .foregroundStyle(p.iconColor)
-                        .shadow(color: p.iconColor.opacity(0.5), radius: 20)
+                    if p == .welcome {
+                        Image("DynetraLogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 72, height: 72)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: accent.opacity(0.4), radius: 20)
+                    } else {
+                        Image(systemName: p.icon)
+                            .font(.system(size: 56, weight: .semibold))
+                            .foregroundStyle(accent)
+                            .shadow(color: accent.opacity(0.4), radius: 20)
+                    }
 
                     if p == .welcome {
                         HStack(alignment: .firstTextBaseline, spacing: 10) {
@@ -120,10 +121,10 @@ struct OnboardingView: View {
                                 .foregroundStyle(.white)
                             Text("BETA")
                                 .font(.system(size: 13, weight: .bold, design: .monospaced))
-                                .foregroundStyle(.black)
+                                .foregroundStyle(.white)
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 3)
-                                .background(Capsule().fill(Color.cyan))
+                                .background(Capsule().fill(accent))
                         }
                     } else {
                         Text(p.title)
@@ -159,11 +160,11 @@ struct OnboardingView: View {
 
             Divider().overlay(Color.white.opacity(0.12))
 
-            featureRow(icon: "gauge.with.dots.needle.bottom.50percent", color: .cyan,
+            featureRow(icon: "gauge.with.dots.needle.bottom.50percent",
                        title: "Live Telemetry", body: "Real-time ERPM, speed, voltage, current, duty cycle, and temperatures.")
-            featureRow(icon: "slider.horizontal.3", color: .blue,
+            featureRow(icon: "slider.horizontal.3",
                        title: "Motor Configuration", body: "FOC detection, current limits, battery cutoffs, and profiles.")
-            featureRow(icon: "antenna.radiowaves.left.and.right", color: .purple,
+            featureRow(icon: "antenna.radiowaves.left.and.right",
                        title: "CAN Network", body: "Connect to and configure multiple VESCs over CAN bus.")
         }
     }
@@ -182,11 +183,11 @@ struct OnboardingView: View {
                 "Permanent damage to the ESC from incorrect FOC parameters",
             ])
 
-            bulletItem(icon: "checkmark.shield.fill", color: .green,
+            bulletItem(icon: "checkmark.shield.fill",
                        text: "Always secure the motor and keep people clear before running detection or applying new settings.")
-            bulletItem(icon: "checkmark.shield.fill", color: .green,
+            bulletItem(icon: "checkmark.shield.fill",
                        text: "Never rely on software limits alone — install appropriate physical safety measures.")
-            bulletItem(icon: "checkmark.shield.fill", color: .green,
+            bulletItem(icon: "checkmark.shield.fill",
                        text: "VESC firmware is open-source and provided as-is. The firmware authors accept no liability for hardware damage or injury.")
         }
     }
@@ -214,7 +215,7 @@ THIS APPLICATION IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
                 "Personal injury arising from unexpected motor behaviour",
                 "Data loss from app crashes or Bluetooth disconnections",
             ], id: \.self) { item in
-                bulletItem(icon: "xmark.circle.fill", color: .red.opacity(0.8), text: item)
+                bulletItem(icon: "xmark.circle.fill", text: item)
             }
 
             Text("VESC® is a trademark of Vedder Drives. This app is an independent third-party tool and is not affiliated with or endorsed by Vedder Drives or the VESC Project.")
@@ -274,9 +275,9 @@ THIS APPLICATION IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
                         .padding(.vertical, 16)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(canAccept ? page.iconColor : Color.white.opacity(0.1))
+                                .fill(canAccept ? accent : Color.white.opacity(0.1))
                         )
-                        .foregroundStyle(canAccept ? .black : .white.opacity(0.3))
+                        .foregroundStyle(canAccept ? .white : .white.opacity(0.3))
                 }
                 .disabled(!canAccept)
                 .padding(.horizontal, 28)
@@ -293,9 +294,9 @@ THIS APPLICATION IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
                     .padding(.vertical, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(page.iconColor.opacity(0.85))
+                            .fill(accent.opacity(0.85))
                     )
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.white)
                 }
                 .padding(.horizontal, 28)
             }
@@ -318,11 +319,11 @@ THIS APPLICATION IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
     // MARK: - Sub-components
 
-    private func featureRow(icon: String, color: Color, title: String, body: String) -> some View {
+    private func featureRow(icon: String, title: String, body: String) -> some View {
         HStack(alignment: .top, spacing: 16) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundStyle(color)
+                .foregroundStyle(accent)
                 .frame(width: 32)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.headline).foregroundStyle(.white)
@@ -336,7 +337,7 @@ THIS APPLICATION IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
             ForEach(items, id: \.self) { item in
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "exclamationmark.circle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(accent)
                         .font(.subheadline)
                         .padding(.top, 2)
                     Text(item)
@@ -349,15 +350,15 @@ THIS APPLICATION IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(Color.orange.opacity(0.1))
-                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.orange.opacity(0.25), lineWidth: 1))
+                .fill(accent.opacity(0.08))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(accent.opacity(0.25), lineWidth: 1))
         )
     }
 
-    private func bulletItem(icon: String, color: Color, text: String) -> some View {
+    private func bulletItem(icon: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .foregroundStyle(color)
+                .foregroundStyle(accent)
                 .font(.subheadline)
                 .padding(.top, 2)
             Text(text)
@@ -387,7 +388,7 @@ THIS APPLICATION IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
             HStack(alignment: .top, spacing: 14) {
                 Image(systemName: isOn.wrappedValue ? "checkmark.square.fill" : "square")
                     .font(.title3)
-                    .foregroundStyle(isOn.wrappedValue ? Color.purple : .white.opacity(0.4))
+                    .foregroundStyle(isOn.wrappedValue ? accent : .white.opacity(0.4))
                     .animation(.spring(response: 0.25), value: isOn.wrappedValue)
 
                 Text(label)
@@ -399,10 +400,10 @@ THIS APPLICATION IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
             .padding(14)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isOn.wrappedValue ? Color.purple.opacity(0.12) : Color.white.opacity(0.05))
+                    .fill(isOn.wrappedValue ? accent.opacity(0.10) : Color.white.opacity(0.05))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
-                            .strokeBorder(isOn.wrappedValue ? Color.purple.opacity(0.4) : Color.white.opacity(0.1), lineWidth: 1)
+                            .strokeBorder(isOn.wrappedValue ? accent.opacity(0.4) : Color.white.opacity(0.1), lineWidth: 1)
                     )
             )
             .animation(.easeInOut(duration: 0.2), value: isOn.wrappedValue)

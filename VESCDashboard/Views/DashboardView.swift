@@ -1,5 +1,34 @@
 import SwiftUI
 
+// Isolated from vm so telemetry ticks don't trigger menu re-renders while it's open.
+private struct DashboardToolbarMenu: View {
+    let showMotorDetection: Bool
+    @Binding var showLog: Bool
+    @Binding var showMotorWizard: Bool
+    @Binding var showMotorProfile: Bool
+    @Binding var showMotorConfig: Bool
+    @Binding var showSettings: Bool
+    @Binding var showTireCorrection: Bool
+    @Binding var showUISettings: Bool
+
+    var body: some View {
+        Menu {
+            Button { showLog = true } label: { Label("Log", systemImage: "list.bullet.rectangle") }
+            if showMotorDetection {
+                Button { showMotorWizard = true } label: { Label("Motor Wizard", systemImage: "wand.and.stars") }
+            }
+            Button { showMotorProfile = true } label: { Label("Profile", systemImage: "slider.horizontal.3") }
+            Button { showMotorConfig = true } label: { Label("Motor Config", systemImage: "bolt.circle") }
+            Button { showSettings = true } label: { Label("Settings", systemImage: "gearshape") }
+            Button { showTireCorrection = true } label: { Label("Tire Size Correction", systemImage: "arrow.triangle.2.circlepath") }
+            Button { showUISettings = true } label: { Label("UI Settings", systemImage: "paintbrush") }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+        .menuOrder(.fixed)
+    }
+}
+
 struct DashboardView: View {
     @ObservedObject var vm: TelemetryViewModel
     @State private var showSettings = false
@@ -68,33 +97,16 @@ struct DashboardView: View {
                     connectionButton
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button { showLog = true } label: {
-                            Label("Log", systemImage: "list.bullet.rectangle")
-                        }
-                        if ui.showMotorDetection {
-                            Button { showMotorWizard = true } label: {
-                                Label("Motor Wizard", systemImage: "wand.and.stars")
-                            }
-                        }
-                        Button { showMotorProfile = true } label: {
-                            Label("Profile", systemImage: "slider.horizontal.3")
-                        }
-                        Button { showMotorConfig = true } label: {
-                            Label("Motor Config", systemImage: "bolt.circle")
-                        }
-                        Button { showSettings = true } label: {
-                            Label("Settings", systemImage: "gearshape")
-                        }
-                        Button { showTireCorrection = true } label: {
-                            Label("Tire Size Correction", systemImage: "arrow.triangle.2.circlepath")
-                        }
-                        Button { showUISettings = true } label: {
-                            Label("UI Settings", systemImage: "paintbrush")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
+                    DashboardToolbarMenu(
+                        showMotorDetection: ui.showMotorDetection,
+                        showLog: $showLog,
+                        showMotorWizard: $showMotorWizard,
+                        showMotorProfile: $showMotorProfile,
+                        showMotorConfig: $showMotorConfig,
+                        showSettings: $showSettings,
+                        showTireCorrection: $showTireCorrection,
+                        showUISettings: $showUISettings
+                    )
                 }
             }
             .sheet(isPresented: $showScan) {
@@ -233,8 +245,6 @@ struct DashboardView: View {
                     unit: "%",
                     accentColor: .dynetraOrange,
                     icon: "battery.100",
-                    warningThreshold: 20.0,
-                    currentValue: batteryPercentage,
                     animated: !ui.reduceStatisticsAnimations,
                     lightMode: ui.lightMode
                 )
@@ -245,8 +255,6 @@ struct DashboardView: View {
                     unit: "V",
                     accentColor: .dynetraOrange,
                     icon: "bolt.fill",
-                    warningThreshold: 36.0,
-                    currentValue: Double(t.inputVoltage),
                     animated: !ui.reduceStatisticsAnimations,
                     lightMode: ui.lightMode
                 )
@@ -435,16 +443,9 @@ struct DashboardView: View {
                 showScan = true
             }
         } label: {
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(vm.isConnected ? .green : .secondary)
-                    .frame(width: 8, height: 8)
-                Text(vm.isConnected ? vm.activeVESCLabel : "Connect")
-                    .font(.caption.weight(.medium))
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(.ultraThinMaterial, in: Capsule())
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(vm.isConnected ? Color.dynetraOrange : Color(uiColor: .systemGray2))
         }
         .buttonStyle(.plain)
     }

@@ -4,6 +4,9 @@ struct UISettingsView: View {
     @ObservedObject var vm: TelemetryViewModel
     @Environment(\.dismiss) private var dismiss
 
+    @State private var emptyVoltageText = ""
+    @State private var fullVoltageText  = ""
+
     private var ui: UISettings { vm.uiSettings }
 
     var body: some View {
@@ -79,30 +82,34 @@ struct UISettingsView: View {
 
                     if vm.uiSettings.showBatteryPercentage {
                         HStack {
-                            Text("Empty Voltage")
-                                .foregroundStyle(.secondary)
+                            Text("Empty Voltage").foregroundStyle(.secondary)
                             Spacer()
-                            TextField("V", value: Binding(
-                                get: { vm.uiSettings.batteryEmptyVoltage },
-                                set: { vm.uiSettings.batteryEmptyVoltage = $0; vm.saveUISettings() }
-                            ), format: .number)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 70)
+                            TextField("e.g. 33.0", text: $emptyVoltageText)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 80)
+                                .onChange(of: emptyVoltageText) { _, v in
+                                    if let d = Double(v), d > 0 {
+                                        vm.uiSettings.batteryEmptyVoltage = d
+                                        vm.saveUISettings()
+                                    }
+                                }
                             Text("V").foregroundStyle(.secondary)
                         }
 
                         HStack {
-                            Text("Full Voltage")
-                                .foregroundStyle(.secondary)
+                            Text("Full Voltage").foregroundStyle(.secondary)
                             Spacer()
-                            TextField("V", value: Binding(
-                                get: { vm.uiSettings.batteryFullVoltage },
-                                set: { vm.uiSettings.batteryFullVoltage = $0; vm.saveUISettings() }
-                            ), format: .number)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 70)
+                            TextField("e.g. 42.0", text: $fullVoltageText)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 80)
+                                .onChange(of: fullVoltageText) { _, v in
+                                    if let d = Double(v), d > 0 {
+                                        vm.uiSettings.batteryFullVoltage = d
+                                        vm.saveUISettings()
+                                    }
+                                }
                             Text("V").foregroundStyle(.secondary)
                         }
                     }
@@ -132,6 +139,10 @@ struct UISettingsView: View {
             }
         }
         .preferredColorScheme(ui.lightMode ? .light : .dark)
+        .onAppear {
+            emptyVoltageText = String(format: "%.1f", vm.uiSettings.batteryEmptyVoltage)
+            fullVoltageText  = String(format: "%.1f", vm.uiSettings.batteryFullVoltage)
+        }
     }
 }
 
