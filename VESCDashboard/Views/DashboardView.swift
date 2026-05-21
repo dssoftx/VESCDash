@@ -19,6 +19,13 @@ struct DashboardView: View {
         ui.suppressIdleAnomalies && abs(vm.speedKMH) < 1.0 ? 0.0 : vm.speedKMH
     }
 
+    private var batteryPercentage: Double {
+        let empty = ui.batteryEmptyVoltage
+        let full  = ui.batteryFullVoltage
+        guard full > empty else { return 0 }
+        return min(100, max(0, (Double(t.inputVoltage) - empty) / (full - empty) * 100))
+    }
+
     private var verificationActive: Bool {
         ui.runVerificationMode && ui.showGPSSpeed && vm.gpsSpeedKMH != nil
     }
@@ -219,22 +226,36 @@ struct DashboardView: View {
 
     private var topMetrics: some View {
         HStack(spacing: 12) {
-            MetricCard(
-                label: "Voltage",
-                value: String(format: "%.1f", t.inputVoltage),
-                unit: "V",
-                accentColor: .green,
-                icon: "bolt.fill",
-                warningThreshold: 36.0,
-                currentValue: Double(t.inputVoltage),
-                animated: !ui.reduceStatisticsAnimations,
-                lightMode: ui.lightMode
-            )
+            if ui.showBatteryPercentage {
+                MetricCard(
+                    label: "Battery %",
+                    value: String(format: "%.0f", batteryPercentage),
+                    unit: "%",
+                    accentColor: .dynetraOrange,
+                    icon: "battery.100",
+                    warningThreshold: 20.0,
+                    currentValue: batteryPercentage,
+                    animated: !ui.reduceStatisticsAnimations,
+                    lightMode: ui.lightMode
+                )
+            } else {
+                MetricCard(
+                    label: "Voltage",
+                    value: String(format: "%.1f", t.inputVoltage),
+                    unit: "V",
+                    accentColor: .dynetraOrange,
+                    icon: "bolt.fill",
+                    warningThreshold: 36.0,
+                    currentValue: Double(t.inputVoltage),
+                    animated: !ui.reduceStatisticsAnimations,
+                    lightMode: ui.lightMode
+                )
+            }
             MetricCard(
                 label: "Battery A",
                 value: String(format: "%.1f", t.batteryCurrent),
                 unit: "A",
-                accentColor: .yellow,
+                accentColor: .dynetraOrange,
                 icon: "battery.100",
                 animated: !ui.reduceStatisticsAnimations,
                 lightMode: ui.lightMode
@@ -250,7 +271,7 @@ struct DashboardView: View {
                 label: "FET Temp",
                 value: String(format: "%.1f", t.mosfetTemperature),
                 unit: "°C",
-                accentColor: .orange,
+                accentColor: .dynetraOrange,
                 icon: "thermometer.medium",
                 warningThreshold: 80,
                 currentValue: Double(t.mosfetTemperature),
@@ -261,7 +282,7 @@ struct DashboardView: View {
                 label: "Motor Temp",
                 value: String(format: "%.1f", t.motorTemperature),
                 unit: "°C",
-                accentColor: .orange,
+                accentColor: .dynetraOrange,
                 icon: "thermometer.high",
                 warningThreshold: 100,
                 currentValue: Double(t.motorTemperature),
@@ -279,7 +300,7 @@ struct DashboardView: View {
                 label: "Motor A",
                 value: String(format: "%.1f", t.motorCurrent),
                 unit: "A",
-                accentColor: .cyan,
+                accentColor: .dynetraOrange,
                 icon: "bolt.ring.closed",
                 animated: !ui.reduceStatisticsAnimations,
                 lightMode: ui.lightMode
@@ -288,7 +309,7 @@ struct DashboardView: View {
                 label: "Power",
                 value: String(format: "%.0f", t.inputVoltage * t.batteryCurrent),
                 unit: "W",
-                accentColor: .purple,
+                accentColor: .dynetraOrange,
                 icon: "flame.fill",
                 animated: !ui.reduceStatisticsAnimations,
                 lightMode: ui.lightMode
@@ -303,7 +324,7 @@ struct DashboardView: View {
             label: "Duty Cycle",
             value: displayDuty,
             displayText: String(format: "%.1f%%", displayDuty * 100),
-            accentColor: .cyan,
+            accentColor: .dynetraOrange,
             icon: "gauge.with.needle",
             animated: !ui.reduceStatisticsAnimations,
             lightMode: ui.lightMode
@@ -318,7 +339,7 @@ struct DashboardView: View {
                 label: "Wh Used",
                 value: String(format: "%.2f", t.wattHours),
                 unit: "Wh",
-                accentColor: .indigo,
+                accentColor: .dynetraOrange,
                 icon: "chart.line.downtrend.xyaxis",
                 animated: !ui.reduceStatisticsAnimations,
                 lightMode: ui.lightMode
@@ -327,7 +348,7 @@ struct DashboardView: View {
                 label: "Ah Used",
                 value: String(format: "%.3f", t.ampHours),
                 unit: "Ah",
-                accentColor: .teal,
+                accentColor: .dynetraOrange,
                 icon: "minus.forwardslash.plus",
                 animated: !ui.reduceStatisticsAnimations,
                 lightMode: ui.lightMode

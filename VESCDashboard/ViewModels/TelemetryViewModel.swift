@@ -58,6 +58,9 @@ struct UISettings: Codable {
     var showGPSSpeed: Bool = false
     var showMotorDetection: Bool = false
     var runVerificationMode: Bool = false
+    var showBatteryPercentage: Bool = false
+    var batteryEmptyVoltage: Double = 33.0
+    var batteryFullVoltage: Double = 42.0
 }
 
 final class TelemetryViewModel: ObservableObject {

@@ -71,6 +71,48 @@ struct UISettingsView: View {
 
                 Section {
                     Toggle(isOn: Binding(
+                        get: { vm.uiSettings.showBatteryPercentage },
+                        set: { vm.uiSettings.showBatteryPercentage = $0; vm.saveUISettings() }
+                    )) {
+                        Label("Show Battery %", systemImage: "battery.100")
+                    }
+
+                    if vm.uiSettings.showBatteryPercentage {
+                        HStack {
+                            Text("Empty Voltage")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            TextField("V", value: Binding(
+                                get: { vm.uiSettings.batteryEmptyVoltage },
+                                set: { vm.uiSettings.batteryEmptyVoltage = $0; vm.saveUISettings() }
+                            ), format: .number)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 70)
+                            Text("V").foregroundStyle(.secondary)
+                        }
+
+                        HStack {
+                            Text("Full Voltage")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            TextField("V", value: Binding(
+                                get: { vm.uiSettings.batteryFullVoltage },
+                                set: { vm.uiSettings.batteryFullVoltage = $0; vm.saveUISettings() }
+                            ), format: .number)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 70)
+                            Text("V").foregroundStyle(.secondary)
+                        }
+                    }
+                } footer: {
+                    Text("Replaces the Voltage box with battery percentage. Set the pack voltage at empty and full charge to calibrate the reading.")
+                        .font(.caption)
+                }
+
+                Section {
+                    Toggle(isOn: Binding(
                         get: { vm.uiSettings.showMotorDetection },
                         set: { vm.uiSettings.showMotorDetection = $0; vm.saveUISettings() }
                     )) {
