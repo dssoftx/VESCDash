@@ -151,7 +151,6 @@ final class TelemetryViewModel: ObservableObject {
     private var lastPacketTime: Date?
     private let timeoutInterval: TimeInterval = 3.0
     private let maxLogLines = 300
-    private var canPollTick = 0
 
     init(bleManager: BLEManager = BLEManager()) {
         self.bleManager = bleManager
@@ -641,15 +640,12 @@ final class TelemetryViewModel: ObservableObject {
 
         sendCommand([VESCCommand.getValues.rawValue])
 
-        // Poll each CAN node at 5 Hz (every other 10 Hz main tick) for combined power.
-        canPollTick += 1
-        if canPollTick % 2 == 0, !canNodes.isEmpty {
-            for node in canNodes {
-                bleManager.send(VESCProtocolParser.buildForwardCAN(
-                    toID: UInt8(node.id),
-                    commandPayload: [VESCCommand.getValues.rawValue]
-                ))
-            }
+        // Poll each CAN node at 10 Hz alongside the main VESC for combined power.
+        for node in canNodes {
+            bleManager.send(VESCProtocolParser.buildForwardCAN(
+                toID: UInt8(node.id),
+                commandPayload: [VESCCommand.getValues.rawValue]
+            ))
         }
     }
 
@@ -892,6 +888,11 @@ final class TelemetryViewModel: ObservableObject {
                     Task { @MainActor in
                         try? await Task.sleep(nanoseconds: 500_000_000)
                         guard self.isConnected else { return }
+                        // Retry FW version if the initial write was dropped (common on first connect).
+                        if self.localFWVersion == nil {
+                            self.pendingLocalFWVersion = false
+                            self.requestLocalFWVersion()
+                        }
                         // Auto-fetch local MCCONF so profile can be applied without manual read
                         self.enqueueBgMCConfFetch(nil)
                         self.pingCAN()
