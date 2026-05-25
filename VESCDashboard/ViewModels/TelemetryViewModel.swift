@@ -464,30 +464,33 @@ final class TelemetryViewModel: ObservableObject {
 
     /// Applies `profile` to every connected VESC.
     ///
-    /// - `storeToFlash = true`:  patches each cached MCCONF and sends COMM_SET_MCCONF (full
-    ///   profile including ERPM / watt limits; always writes flash). Nodes without a cached config
-    ///   are skipped — auto-fetch on connect covers them automatically.
+    /// - `storeToFlash = true`:  sends COMM_SET_MCCONF_TEMP store=false (RAM apply) followed by
+    ///   store=true (flash persist). Two packets ensure RAM is updated even on firmware 6.06+
+    ///   where store=true alone only writes flash.
     ///
-    /// - `storeToFlash = false`: sends COMM_SET_MCCONF_TEMP (firmware 6.x format) with all profile
-    ///   fields (current scale, ERPM limits, watt limits). RAM-only — resets on reboot.
+    /// - `storeToFlash = false`: sends COMM_SET_MCCONF_TEMP store=false (RAM-only).
     ///   forwardCAN=true so the local VESC auto-forwards to all CAN nodes.
     func applyProfile(_ profile: MotorProfile, storeToFlash: Bool = true) {
         guard isConnected else { motorLimitsSendState = .failed("Not connected"); return }
 
-        // Both flash and RAM use COMM_SET_MCCONF_TEMP with forwardCAN=true so the local VESC
-        // auto-forwards to all CAN nodes. store=true persists to flash, store=false is RAM-only.
-        // This mirrors how VESC Tool applies profiles and avoids full-MCCONF CAN forwarding issues.
-        let payload = VESCProtocolParser.mcconfTempPayload(
-            currentMinScale: profile.currentMinScale,
-            currentMaxScale: profile.currentMaxScale,
-            minERPM: profile.minERPM,
-            maxERPM: profile.maxERPM,
-            wattMin: profile.wattMin,
-            wattMax: profile.wattMax,
-            store: storeToFlash,
-            forwardCAN: true
-        )
-        bleManager.send(VESCProtocolParser.buildPacket(payload: payload))
+        func makePayload(store: Bool) -> [UInt8] {
+            VESCProtocolParser.mcconfTempPayload(
+                currentMinScale: profile.currentMinScale,
+                currentMaxScale: profile.currentMaxScale,
+                minERPM: profile.minERPM,
+                maxERPM: profile.maxERPM,
+                wattMin: profile.wattMin,
+                wattMax: profile.wattMax,
+                store: store,
+                forwardCAN: true
+            )
+        }
+
+        // Always apply to RAM first. On firmware 6.06+, store=true alone only writes flash.
+        bleManager.send(VESCProtocolParser.buildPacket(payload: makePayload(store: false)))
+        if storeToFlash {
+            bleManager.send(VESCProtocolParser.buildPacket(payload: makePayload(store: true)))
+        }
 
         motorProfile = profile
 
