@@ -69,6 +69,12 @@ final class TelemetryViewModel: ObservableObject {
     @Published var telemetry: TelemetryData = .empty
     @Published var speedKMH: Double = 0
 
+    /// Combined input power across local VESC + all polled CAN nodes (W).
+    var combinedPowerW: Float {
+        let canCurrent = canNodes.reduce(0) { $0 + $1.batteryCurrent }
+        return telemetry.inputVoltage * (telemetry.batteryCurrent + canCurrent)
+    }
+
     // MARK: Peak stats (reset on disconnect or CAN-node switch)
     @Published var peakSpeedKMH: Double = 0
     @Published var peakGPSSpeedKMH: Double = 0
@@ -145,6 +151,7 @@ final class TelemetryViewModel: ObservableObject {
     private var lastPacketTime: Date?
     private let timeoutInterval: TimeInterval = 3.0
     private let maxLogLines = 300
+    private var canPollTick = 0
 
     init(bleManager: BLEManager = BLEManager()) {
         self.bleManager = bleManager
@@ -633,6 +640,17 @@ final class TelemetryViewModel: ObservableObject {
         }
 
         sendCommand([VESCCommand.getValues.rawValue])
+
+        // Poll each CAN node at 5 Hz (every other 10 Hz main tick) for combined power.
+        canPollTick += 1
+        if canPollTick % 2 == 0, !canNodes.isEmpty {
+            for node in canNodes {
+                bleManager.send(VESCProtocolParser.buildForwardCAN(
+                    toID: UInt8(node.id),
+                    commandPayload: [VESCCommand.getValues.rawValue]
+                ))
+            }
+        }
     }
 
     // MARK: - Private — Incoming
@@ -699,6 +717,11 @@ final class TelemetryViewModel: ObservableObject {
                 // stores into rawMCConfByCANID[srcID] regardless of queue state.
                 pendingMCConfSource = .can(srcID)
                 handleMCConf(inner)
+            } else if innerCmd == VESCCommand.getValues.rawValue {
+                if let data = try? VESCProtocolParser.parseTelemetry(payload: inner),
+                   let idx = canNodes.firstIndex(where: { $0.id == srcID }) {
+                    canNodes[idx].batteryCurrent = data.batteryCurrent
+                }
             }
 
         default:

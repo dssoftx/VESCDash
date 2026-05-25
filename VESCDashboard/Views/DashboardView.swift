@@ -314,8 +314,8 @@ struct DashboardView: View {
                 lightMode: ui.lightMode
             )
             MetricCard(
-                label: "Power",
-                value: String(format: "%.0f", t.inputVoltage * t.batteryCurrent),
+                label: vm.canNodes.isEmpty ? "Power" : "Total W",
+                value: String(format: "%.0f", vm.combinedPowerW),
                 unit: "W",
                 accentColor: .dynetraOrange,
                 icon: "flame.fill",
