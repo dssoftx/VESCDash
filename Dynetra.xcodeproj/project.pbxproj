@@ -17,7 +17,6 @@
 		657990812FBF88A500B10770 /* Dynetra.png in Sources */ = {isa = PBXBuildFile; fileRef = 657990802FBF889000B10770 /* Dynetra.png */; };
 		65C508AA2FBCE4E700156EAB /* Dynetra.icon in Sources */ = {isa = PBXBuildFile; fileRef = 65C508A72FBCDFAE00156EAB /* Dynetra.icon */; };
 		65FA1DF82FBE31A100A57444 /* TireSizeCorrectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65FA1DF72FBE31A100A57444 /* TireSizeCorrectionView.swift */; };
-		CF0001A2B3C4D5E6F7000002 /* Assets.xcassets in Sources */ = {isa = PBXBuildFile; fileRef = CF0001A2B3C4D5E6F7000001 /* Assets.xcassets */; };
 		72B372C99B6733750517F0FF /* CANNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB34049FAA0C6AE0D43852B /* CANNode.swift */; };
 		745074AFA04B126B2833DF1E /* VESCDashboardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0C9F4C6DC173512DE83460 /* VESCDashboardApp.swift */; };
 		7514212435CE9A68EF40BC5B /* LogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791D0E055BDFECEED14CEB51 /* LogView.swift */; };
@@ -29,6 +28,7 @@
 		B2C3D4E5F601234567890AB1 /* MotorProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60123456789012 /* MotorProfileView.swift */; };
 		C3D4E5F690AB01234567890A /* MotorProfileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F690AB012345678901 /* MotorProfileListView.swift */; };
 		CC7CED3E6B7052E1BEABFD3E /* VESCProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE94DA994F5C1AE16A0736AE /* VESCProtocolTests.swift */; };
+		CF0001A2B3C4D5E6F7000002 /* Assets.xcassets in Sources */ = {isa = PBXBuildFile; fileRef = CF0001A2B3C4D5E6F7000001 /* Assets.xcassets */; };
 		D4E5F6A7B8C901234567890A /* UISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9012345678901 /* UISettingsView.swift */; };
 		D6D29ECBC1C4D5156B9C9430 /* TelemetryData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F93404B5BE442CCB2B3190 /* TelemetryData.swift */; };
 		E6F7A8B9C0D101234567890A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6F7A8B9C0D1012345678901 /* OnboardingView.swift */; };
@@ -55,7 +55,6 @@
 		657990802FBF889000B10770 /* Dynetra.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Dynetra.png; sourceTree = "<group>"; };
 		65C508A72FBCDFAE00156EAB /* Dynetra.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Dynetra.icon; sourceTree = "<group>"; };
 		65FA1DF72FBE31A100A57444 /* TireSizeCorrectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TireSizeCorrectionView.swift; sourceTree = "<group>"; };
-		CF0001A2B3C4D5E6F7000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7824338E4581121E83E51F7B /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		791D0E055BDFECEED14CEB51 /* LogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogView.swift; sourceTree = "<group>"; };
 		7A7097D51626E63D330B6B02 /* DeviceScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceScanView.swift; sourceTree = "<group>"; };
@@ -67,6 +66,7 @@
 		B6F93404B5BE442CCB2B3190 /* TelemetryData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryData.swift; sourceTree = "<group>"; };
 		BE0C9F4C6DC173512DE83460 /* VESCDashboardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VESCDashboardApp.swift; sourceTree = "<group>"; };
 		C3D4E5F690AB012345678901 /* MotorProfileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorProfileListView.swift; sourceTree = "<group>"; };
+		CF0001A2B3C4D5E6F7000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D4E5F6A7B8C9012345678901 /* UISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UISettingsView.swift; sourceTree = "<group>"; };
 		DE94DA994F5C1AE16A0736AE /* VESCProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VESCProtocolTests.swift; sourceTree = "<group>"; };
 		DEB34049FAA0C6AE0D43852B /* CANNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CANNode.swift; sourceTree = "<group>"; };
@@ -334,14 +334,16 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
 				INFOPLIST_FILE = VESCDashboard/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Dynetra;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dssoft.dynetra;
 				PRODUCT_NAME = Dynetra;
 				SDKROOT = iphoneos;
@@ -440,14 +442,16 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
 				INFOPLIST_FILE = VESCDashboard/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Dynetra;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dssoft.dynetra;
 				PRODUCT_NAME = Dynetra;
 				SDKROOT = iphoneos;
