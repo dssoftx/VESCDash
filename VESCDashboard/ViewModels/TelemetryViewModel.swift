@@ -107,6 +107,8 @@ final class TelemetryViewModel: ObservableObject {
     private var pendingFWVersionCANID: Int? = nil
     private var fwVersionQueue: [Int] = []
     private var pendingLocalFWVersion = false
+    // CAN node battery-current polling: ordered queue of CAN IDs whose cmd-50 response is in flight.
+    private var pendingCANValueQueue: [Int] = []
 
     // MARK: Motor config cache (raw MCCONF payloads for read-modify-write)
     private enum MCConfSource { case local; case can(Int) }
@@ -640,11 +642,15 @@ final class TelemetryViewModel: ObservableObject {
 
         sendCommand([VESCCommand.getValues.rawValue])
 
-        // Poll each CAN node at 10 Hz alongside the main VESC for combined power.
+        // Poll each CAN node for battery current using COMM_GET_VALUES_SELECTIVE (cmd 50,
+        // mask=0x08 = avg_input_current only). Using cmd 50 keeps CAN responses distinct from
+        // the master's cmd 4 reply so telemetry is never overwritten with CAN node data.
+        pendingCANValueQueue.removeAll()
         for node in canNodes {
+            pendingCANValueQueue.append(node.id)
             bleManager.send(VESCProtocolParser.buildForwardCAN(
                 toID: UInt8(node.id),
-                commandPayload: [VESCCommand.getValues.rawValue]
+                commandPayload: VESCProtocolParser.buildGetValuesSelectivePayload(mask: 0x00000008)
             ))
         }
     }
@@ -664,6 +670,9 @@ final class TelemetryViewModel: ObservableObject {
 
         case VESCCommand.pingCAN.rawValue:
             handleCANPing(payload)
+
+        case VESCCommand.getValuesSelective.rawValue:
+            handleCANValueSelectiveResponse(payload)
 
         case VESCCommand.setMCConfTemp.rawValue:
             appendLog("[MCCONF] Limits accepted by VESC")
@@ -713,11 +722,8 @@ final class TelemetryViewModel: ObservableObject {
                 // stores into rawMCConfByCANID[srcID] regardless of queue state.
                 pendingMCConfSource = .can(srcID)
                 handleMCConf(inner)
-            } else if innerCmd == VESCCommand.getValues.rawValue {
-                if let data = try? VESCProtocolParser.parseTelemetry(payload: inner),
-                   let idx = canNodes.firstIndex(where: { $0.id == srcID }) {
-                    canNodes[idx].batteryCurrent = data.batteryCurrent
-                }
+            } else if innerCmd == VESCCommand.getValuesSelective.rawValue {
+                handleCANValueSelectiveResponse(inner)
             }
 
         default:
@@ -783,40 +789,59 @@ final class TelemetryViewModel: ObservableObject {
         }
     }
 
+    private func handleCANValueSelectiveResponse(_ payload: [UInt8]) {
+        guard let nodeID = pendingCANValueQueue.first else { return }
+        pendingCANValueQueue.removeFirst()
+        if let current = VESCProtocolParser.parseGetValuesSelectiveBatteryCurrent(payload: payload),
+           let idx = canNodes.firstIndex(where: { $0.id == nodeID }) {
+            canNodes[idx].batteryCurrent = current
+        }
+    }
+
     private func handleMCConf(_ payload: [UInt8]) {
         let wasBg = isBgFetchingMCConf
         isBgFetchingMCConf = false
 
-        switch pendingMCConfSource {
+        let source = pendingMCConfSource
+        switch source {
         case .local:       rawMCConfLocal = payload
         case .can(let id): rawMCConfByCANID[id] = payload
         }
         pendingMCConfSource = .local
 
-        // Profile fields [33-86] are at stable offsets across all firmware 6.x — read them
-        // regardless of whether the full MCCONF parse succeeds. This ensures profiles can be
-        // applied via COMM_SET_MCCONF_TEMP even on unsupported or mismatched firmware.
-        if let prof = VESCProtocolParser.readProfileFromMCConf(payload: payload) {
-            motorProfile = prof
-        }
+        // Only update the displayed profile/limits when this config is for the selected VESC or
+        // the user explicitly requested a read. Background fetches for non-selected CAN nodes
+        // only populate the raw cache so profiles can be applied without a manual read first.
+        let isSelectedSource: Bool = {
+            switch source {
+            case .local:       return selectedCANID == nil
+            case .can(let id): return selectedCANID == id
+            }
+        }()
 
-        do {
-            let limits = try VESCProtocolParser.parseMCConfLimits(payload: payload)
-            motorLimits = limits
-            mcconfCompatWarning = nil
-            saveMotorLimits()
-            if !wasBg { motorLimitsReadState = .loaded }
-            appendLog("[MCCONF] Loaded: phase=\(Int(limits.phaseCurrentMax))A batt=\(Int(limits.batteryCurrentMax))A regen=\(Int(limits.batteryCurrentRegen))A abs=\(Int(limits.absCurrentMax))A observer=\(limits.observerType) fzv=\(Int(limits.zeroVectorFreqHz))Hz")
-        } catch PacketError.firmwareMismatch(let detail) {
-            // Build the full warning, prepending firmware version if known
-            let fwTag = localFWVersion.map { "Firmware: \($0)\n" } ?? ""
-            mcconfCompatWarning = fwTag + detail
-            // Raw payload still cached — do NOT update motorLimits with garbage values
-            if !wasBg { motorLimitsReadState = .failed("Firmware layout mismatch — config locked (see banner)") }
-            appendLog("[MCCONF] Firmware mismatch — offsets for FW6.05 don't match this firmware")
-        } catch {
-            if !wasBg { motorLimitsReadState = .failed(error.localizedDescription) }
-            appendLog("[MCCONF] Parse error: \(error.localizedDescription)")
+        if isSelectedSource || !wasBg {
+            // Profile fields are at stable offsets across all firmware 6.x — read regardless
+            // of whether the full MCCONF parse succeeds.
+            if let prof = VESCProtocolParser.readProfileFromMCConf(payload: payload) {
+                motorProfile = prof
+            }
+
+            do {
+                let limits = try VESCProtocolParser.parseMCConfLimits(payload: payload)
+                motorLimits = limits
+                mcconfCompatWarning = nil
+                saveMotorLimits()
+                if !wasBg { motorLimitsReadState = .loaded }
+                appendLog("[MCCONF] Loaded: phase=\(Int(limits.phaseCurrentMax))A batt=\(Int(limits.batteryCurrentMax))A regen=\(Int(limits.batteryCurrentRegen))A abs=\(Int(limits.absCurrentMax))A observer=\(limits.observerType) fzv=\(Int(limits.zeroVectorFreqHz))Hz")
+            } catch PacketError.firmwareMismatch(let detail) {
+                let fwTag = localFWVersion.map { "Firmware: \($0)\n" } ?? ""
+                mcconfCompatWarning = fwTag + detail
+                if !wasBg { motorLimitsReadState = .failed("Firmware layout mismatch — config locked (see banner)") }
+                appendLog("[MCCONF] Firmware mismatch — offsets for FW6.05 don't match this firmware")
+            } catch {
+                if !wasBg { motorLimitsReadState = .failed(error.localizedDescription) }
+                appendLog("[MCCONF] Parse error: \(error.localizedDescription)")
+            }
         }
 
         // Drain the next bg fetch after a short pause to avoid flooding BLE

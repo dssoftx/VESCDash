@@ -195,6 +195,44 @@ enum VESCProtocolParser {
         return buildPacket(payload: payload)
     }
 
+    // MARK: - COMM_GET_VALUES_SELECTIVE (cmd 50)
+    //
+    // Request: [50] [mask: uint32 BE]
+    // Response: [50] [mask: uint32 BE] [requested fields in bit order]
+    //
+    // Bitmask bits:
+    //   bit 0: temp_fet          (int16 / 10)
+    //   bit 1: temp_motor        (int16 / 10)
+    //   bit 2: avg_motor_current (float32 IEEE-754 BE)
+    //   bit 3: avg_input_current (float32 IEEE-754 BE)  ← battery current
+    //   bit 4: avg_id            (float32 BE)
+    //   bit 5: avg_iq            (float32 BE)
+    //   bit 6: duty_cycle        (int16 / 1000)
+    //   bit 7: rpm               (int32)
+    //   bit 8: v_in              (int16 / 10)
+    //   ...
+    //
+    // Use mask=0x00000008 to request only avg_input_current (4-byte float32 BE at response[5–8]).
+
+    /// Raw payload for a COMM_GET_VALUES_SELECTIVE request (no framing). Pass to buildForwardCAN.
+    static func buildGetValuesSelectivePayload(mask: UInt32) -> [UInt8] {
+        [VESCCommand.getValuesSelective.rawValue,
+         UInt8((mask >> 24) & 0xFF),
+         UInt8((mask >> 16) & 0xFF),
+         UInt8((mask >>  8) & 0xFF),
+         UInt8( mask        & 0xFF)]
+    }
+
+    /// Extracts avg_input_current (battery current) from a COMM_GET_VALUES_SELECTIVE response
+    /// built with mask=0x00000008 (bit 3 only → single float32 field at bytes [5–8]).
+    static func parseGetValuesSelectiveBatteryCurrent(payload: [UInt8]) -> Float? {
+        guard payload.count >= 9,
+              payload[0] == VESCCommand.getValuesSelective.rawValue else { return nil }
+        let bits = (UInt32(payload[5]) << 24) | (UInt32(payload[6]) << 16) |
+                   (UInt32(payload[7]) <<  8) |  UInt32(payload[8])
+        return Float(bitPattern: bits)
+    }
+
     // MARK: - COMM_PING_CAN (cmd 81)
     //
     // Request: single-byte payload [81]. The master VESC pings each CAN ID 0–253
